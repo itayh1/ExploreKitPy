@@ -4,20 +4,20 @@ import random
 
 class Fold:
 
-    indices = []
-    numInstancesPerClass = []
-    indicesByClass = []
-    numOfInstancesInFold = 0
-    distinctValMappings = {}
-    typeOfFold = None
+    # indices: list
+    # numInstancesPerClass: list
+    # indicesByClass: list
+    # numOfInstancesInFold: int
+    # distinctValMappings: dict
+    # typeOfFold = None
 
     def __init__(self, numOfClasses: int, isTestFold: bool):
-        self.indices = []
-        self.numInstancesPerClass = numOfClasses * [0]
-        self.isTestFold = isTestFold
-
-        self.indicesByClass = {i:[] for i in range(numOfClasses)}    # class -> indices
+        self.indices: list = []
+        self.numInstancesPerClass: list = numOfClasses * [0]
+        self.isTestFold: bool = isTestFold
+        self.indicesByClass: dict = {i:[] for i in range(numOfClasses)}    # class -> indices
         self.distinctValMappings = None
+        self.numOfInstancesInFold: int = 0
 
     def getIndices(self):
         return self.indices
@@ -86,3 +86,14 @@ class Fold:
                 numOfInstancesPerClass[i] = (numOfInstancesPerClass[i] / sum(numOfInstancesPerClass)) * numOfSamples
 
         return numOfInstancesPerClass
+
+    # Gets the number of instances of a certain class in the fold
+    def getNumOfInstancesPerClass(self, classIdx: int):
+        return self.numInstancesPerClass[classIdx]
+
+    # Adds an instance to the fold and updates the counter and indices list
+    def addInstance(self, index: int, classIdx: int):
+        self.indices.append(index)
+        self.indicesByClass[classIdx].append(index)
+        self.numInstancesPerClass[classIdx] += 1
+        self.numOfInstancesInFold += 1

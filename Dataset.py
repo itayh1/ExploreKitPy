@@ -41,3 +41,12 @@ class Dataset:
 
     def GenerateTrainingSetSubFolds(self):
         pass
+
+    def getIndicesOfTrainingInstances(self):
+        pass
+
+    def getNumberOfRows(self):
+        pass
+
+    def getIndices(self):
+        pass
