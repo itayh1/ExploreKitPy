@@ -146,11 +146,11 @@ class MLAttributeManager:
     def generateMetaFeaturesInstances(self, includeValueBased: bool):
         datasetFilesForBackgroundArray = self.getOriginalBackgroundDatasets()
         for datasetForBackgroundModel in datasetFilesForBackgroundArray:
-            possibleFolderName = Properties.DatasetInstancesFilesLocation + datasetForBackgroundModel + '_' + Properties.randomSeed
+            possibleFolderName = Properties.DatasetInstancesFilesLocation + datasetForBackgroundModel + '_' + str(Properties.randomSeed)
 
             if not os.path.isdir(possibleFolderName):
                 loader = Loader()
-                Logger.Info("Getting candidate attributes for " + datasetForBackgroundModel.getAbsolutePath())
+                Logger.Info("Getting candidate attributes for " + datasetForBackgroundModel)
                 backgroundDataset = loader.readArff(datasetForBackgroundModel, int(Properties.randomSeed), None, None, 0.66)
                 self.createDatasetMetaFeaturesInstances(backgroundDataset, includeValueBased)
 
@@ -208,10 +208,10 @@ class MLAttributeManager:
                          + "  from file: " + backgroundFilePath + "  :  " + ex)
             return None
 
-
+    # return absolute path of the dataset
     def getOriginalBackgroundDatasets(self):
         datasetFolder = Properties.originalBackgroundDatasetsLocation
-        datasetsFilesList = [f for f in os.listdir(datasetFolder) if os.path.isfile(os.path.join(datasetFolder, f))]
+        datasetsFilesList = [os.path.join(datasetFolder, f) for f in os.listdir(datasetFolder) if os.path.isfile(os.path.join(datasetFolder, f))]
         if len(datasetsFilesList)==0:
             raise Exception('generateMetaFeaturesInstances -> no files in ' + datasetFolder)
         return datasetsFilesList

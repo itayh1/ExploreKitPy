@@ -32,7 +32,7 @@ class Loader:
                 targetClassName = df.keys()[-1]
             else:
                 targetClassName = classAttIndex
-            df[targetClassName] = df[targetClassName].astype(np.int_) - 1
+            df[targetClassName] = df[targetClassName].str.decode("utf-8")
 
             if distinctValIndices == None:
                 folds = self.GenerateFolds(df[targetClassName], randomSeed, trainingSetPercentageOfDataset)
@@ -57,27 +57,27 @@ class Loader:
         numOfClasses = targetColumnInfo.unique().shape[0]
 
         # Store the indices of the instances, partitioned by their class
-        itemIndicesByClass = [[] for i in range(numOfClasses)]
-
+        # itemIndicesByClass = [[] for i in range(numOfClasses)]
+        itemIndicesByClass = {key:[] for key in targetColumnInfo.unique()}
 
         for i  in range(targetColumnInfo.shape[0]):
-            instanceClass = int(targetColumnInfo[i])
+            instanceClass = targetColumnInfo[i]
             itemIndicesByClass[instanceClass].append(i)
 
-        # Now we calculate the number of instances from each class we want to assign to fold
+        # Now we calculate the number of instances from each class we want  to assign to fold
         numOfFolds = Properties.numOfFolds
-        maxNumOfInstancesPerTrainingClassPerFold = [] # np.arr numOfClasses];
-        maxNumOfInstancesPerTestClassPerFold = [] # new double[numOfClasses];
-        for i in range(len(itemIndicesByClass)):
+        maxNumOfInstancesPerTrainingClassPerFold = {} # np.arr numOfClasses];
+        maxNumOfInstancesPerTestClassPerFold = {} # new double[numOfClasses];
+        for key in itemIndicesByClass.keys():
             # If the training set overall size (in percentages) is predefined, use it. Otherwise, just create equal folds
             if trainingSetPercentage == -1:
-                maxNumOfInstancesPerTrainingClassPerFold[i] = len(itemIndicesByClass[i])/numOfFolds
-                maxNumOfInstancesPerTestClassPerFold[i] = len(itemIndicesByClass[i])/numOfFolds
+                maxNumOfInstancesPerTrainingClassPerFold[key] = len(itemIndicesByClass[key])/numOfFolds
+                maxNumOfInstancesPerTestClassPerFold[key] = len(itemIndicesByClass[key])/numOfFolds
 
             else:
                 # The total number of instances, multipllied by the training percentage and then divided by the number of the TRAINING folds
-                maxNumOfInstancesPerTrainingClassPerFold.append(len(itemIndicesByClass[i]) * trainingSetPercentage /(numOfFolds-1))
-                maxNumOfInstancesPerTestClassPerFold.append(len(itemIndicesByClass[i]) - maxNumOfInstancesPerTrainingClassPerFold[i])
+                maxNumOfInstancesPerTrainingClassPerFold[key] = (len(itemIndicesByClass[key]) * trainingSetPercentage /(numOfFolds-1))
+                maxNumOfInstancesPerTestClassPerFold[key] = (len(itemIndicesByClass[key]) - maxNumOfInstancesPerTrainingClassPerFold[key])
 
         # We're using a fixed seed so we can reproduce our results
         # int randomSeed = Integer.parseInt(properties.getProperty("randomSeed"))
@@ -87,7 +87,7 @@ class Loader:
         folds = [] #new ArrayList<>(numOfClasses);
         for i in range(numOfFolds):
             isTestFold = self.designateFoldAsTestSet(numOfFolds, i, Properties.testFoldDesignation)
-            fold = Fold(numOfClasses, isTestFold)
+            fold = Fold(targetColumnInfo.unique(), isTestFold)
             folds.append(fold)
 
 

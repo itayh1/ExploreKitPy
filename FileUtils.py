@@ -1,6 +1,6 @@
 
 from os import listdir, remove
-from os.path import isdir, isfile, join
+from os.path import isdir, isfile, join, abspath
 
 from Logger import Logger
 '''
@@ -19,3 +19,9 @@ def deleteFile(filePath: str):
         remove(filePath)
     except:
         Logger.Error('Failed delete file: ' + filePath)
+
+def getAbsPath(filePath: str):
+    try:
+        return abspath(filePath)
+    except:
+        Logger.Error('Failed get file abs path for ' + filePath)

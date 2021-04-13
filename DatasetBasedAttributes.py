@@ -5,10 +5,11 @@ import scipy
 import scipy.stats
 
 from AttributeInfo import AttributeInfo
+from AucWrapperEvaluator import AucWrapperEvaluator
 from Column import Column
 from Dataset import Dataset
 from EqualRangeDiscretizerUnaryOperator import EqualRangeDiscretizerUnaryOperator
-from FilterWrapperHeuristicSearch import FilterWrapperHeuristicSearch
+# from FilterWrapperHeuristicSearch import FilterWrapperHeuristicSearch
 from InformationGainFilterEvaluator import InformationGainFilterEvaluator
 from Logger import Logger
 from Properties import Properties
@@ -158,8 +159,12 @@ class DatasetBasedAttributes:
         for fold in dataset.getFolds():
             fold.setIsTestFold(False)
 
-        fwhs = FilterWrapperHeuristicSearch(10)
-        wrapperEvaluator = fwhs.getWrapper("AucWrapperEvaluator")
+        wrapperName = 'AucWrapperEvaluator'
+        if wrapperName == 'AucWrapperEvaluator':
+            wrapperEvaluator = AucWrapperEvaluator()
+        else:
+            raise Exception('Unidentified wrapper')
+
         leaveOneFoldOutDatasets = dataset.GenerateTrainingSetSubFolds()
         classificationResults = wrapperEvaluator.produceClassificationResults(leaveOneFoldOutDatasets)
 
