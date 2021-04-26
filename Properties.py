@@ -24,9 +24,10 @@ class Properties:
     maxNumberOfDiscreteValuesForInclusionInSet=1000
     classifiersForMLAttributesGeneration='RandomForest'
     #/home/itay/Documents/java/ExploreKit/AutomaticFeatureGeneration-master/ML_Background
-    DatasetInstancesFilesLocation='/home/itay/Documents/java/ExploreKit/AutomaticFeatureGeneration-master/ML_Background/Candidate_attributes/'
-    backgroundClassifierLocation='/home/itay/Documents/java/ExploreKit/AutomaticFeatureGeneration-master/ML_Background/Background_classifiers_and_arffs/'
-    originalBackgroundDatasetsLocation='/home/itay/Documents/java/ExploreKit/AutomaticFeatureGeneration-master/ML_Background/DatasetsForMetaModel/'
+    # /home/itay/Documents/EKpy/ML_Background
+    DatasetInstancesFilesLocation='/home/itay/Documents/EKpy/ML_Background/Candidate_attributes/'
+    backgroundClassifierLocation='/home/itay/Documents/EKpy/ML_Background/Background_classifiers_and_arffs/'
+    originalBackgroundDatasetsLocation='/home/itay/Documents/EKpy/ML_Background/DatasetsForMetaModel/'
     preRankedAttributesToGenerate=50000
     usePreRanker=False
     # mySQLUrl=jdbc:mysql://localhost:3306/explorekit

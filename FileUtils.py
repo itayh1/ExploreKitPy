@@ -1,6 +1,6 @@
 
 from os import listdir, remove
-from os.path import isdir, isfile, join, abspath
+from os.path import isdir, isfile, join, abspath, split
 
 from Logger import Logger
 '''
@@ -25,3 +25,10 @@ def getAbsPath(filePath: str):
         return abspath(filePath)
     except:
         Logger.Error('Failed get file abs path for ' + filePath)
+
+def getFilenameFromPath(filePath: str) -> str:
+    try:
+        folderPath, fileName = split(filePath)
+        return fileName
+    except:
+        Logger.Error('Failed get filename out of file path: ' + filePath)

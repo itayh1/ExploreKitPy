@@ -6,7 +6,7 @@ import Fold
 class Dataset:
 
     def __init__(self, df: pd.DataFrame, folds: list, targetClass: str, name: str, seed: int,
-                 maxNumOfValsPerDiscreteAttribtue: int):
+                 distinctValColumns:list, maxNumOfValsPerDiscreteAttribtue: int):
         self.randomSeed = seed
         self.df = df
         self.folds = folds
@@ -14,7 +14,7 @@ class Dataset:
         self.name = name
 
         self.maxNumOFDiscreteValuesForInstancesObject = maxNumOfValsPerDiscreteAttribtue
-
+        self.distinctValColumns = distinctValColumns
         self.indicesOfTrainingFolds = None
         self.indicesOfTestFolds = None
 
@@ -49,4 +49,11 @@ class Dataset:
         pass
 
     def getIndices(self):
+        pass
+
+    # Returns the columns used to create the distinct value of the instances
+    def getDistinctValueColumns(self):
+        return self.distinctValColumns
+
+    def getDistinctValueCompliantColumns(self):
         pass

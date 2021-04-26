@@ -1,6 +1,8 @@
 Main
 -ArffLoader
+  -Dataset
 -FilterWrapperHeuristicSearch
- -MLFilterEvaluator
-  -MLAttributeManager
-  -DatasetBasedAttributes
+  -MLFilterEvaluator
+    -MLAttributeManager
+      -OperatorsAssignmentsManager
+    -DatasetBasedAttributes
