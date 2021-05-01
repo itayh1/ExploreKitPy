@@ -11,3 +11,6 @@ class Date:
 
     def __sub__(self, other):
         return self.time - other.time
+
+    def __str__(self):
+        return str(self.time)

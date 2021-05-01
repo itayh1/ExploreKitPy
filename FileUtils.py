@@ -1,5 +1,5 @@
 
-from os import listdir, remove
+from os import listdir, remove, rename
 from os.path import isdir, isfile, join, abspath, split
 
 from Logger import Logger
@@ -32,3 +32,6 @@ def getFilenameFromPath(filePath: str) -> str:
         return fileName
     except:
         Logger.Error('Failed get filename out of file path: ' + filePath)
+
+def renameFile(oldFilePath: str, newFilePath: str):
+    rename(r'{}'.format(oldFilePath), r'{}'.format(newFilePath))

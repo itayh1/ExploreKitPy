@@ -60,7 +60,7 @@ class Loader:
         # itemIndicesByClass = [[] for i in range(numOfClasses)]
         itemIndicesByClass = {key:[] for key in targetColumnInfo.unique()}
 
-        for i  in range(targetColumnInfo.shape[0]):
+        for i in range(targetColumnInfo.shape[0]):
             instanceClass = targetColumnInfo[i]
             itemIndicesByClass[instanceClass].append(i)
 

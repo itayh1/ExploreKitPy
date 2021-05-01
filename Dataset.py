@@ -5,18 +5,18 @@ import Fold
 
 class Dataset:
 
-    def __init__(self, df: pd.DataFrame, folds: list, targetClass: str, name: str, seed: int,
-                 distinctValColumns:list, maxNumOfValsPerDiscreteAttribtue: int):
+    def __init__(self, df: pd.DataFrame, folds: list, targetClass: str, name: str, seed: int, maxNumOfValsPerDiscreteAttribtue: int):
         self.randomSeed = seed
         self.df = df
         self.folds = folds
         self.targetClass = targetClass
         self.name = name
-
-        self.maxNumOFDiscreteValuesForInstancesObject = maxNumOfValsPerDiscreteAttribtue
-        self.distinctValColumns = distinctValColumns
         self.indicesOfTrainingFolds = None
         self.indicesOfTestFolds = None
+
+        self.maxNumOfDiscreteValuesForInstancesObject = maxNumOfValsPerDiscreteAttribtue
+        # self.distinctValColumns = distinctValColumns
+
 
     def getNumOfInstancesPerColumn(self):
         pass
@@ -52,8 +52,8 @@ class Dataset:
         pass
 
     # Returns the columns used to create the distinct value of the instances
-    def getDistinctValueColumns(self):
-        return self.distinctValColumns
+    # def getDistinctValueColumns(self):
+    #     return self.distinctValColumns
 
     def getDistinctValueCompliantColumns(self):
         pass

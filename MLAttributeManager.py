@@ -43,7 +43,7 @@ class MLAttributeManager:
 
 
         # If the classification model already exists, load and return it
-        if os.path.isfile (path):
+        if os.path.isfile(path):
             Logger.Info("Background model already exists. Extracting from " + path)
             return self.getClassificationModel(dataset, backgroundFilePath)
 
@@ -96,7 +96,7 @@ class MLAttributeManager:
 
                 merged = self.getMergedFile(candidateAttrDirectory,includeValueBased)
                 if merged is not None:
-                    self.addArffFileContentToTargetFile(backgroundFilePath, merged[0].getAbsolutePath(),addHeader)
+                    MLAttributeManager.addArffFileContentToTargetFile(backgroundFilePath, merged[0].getAbsolutePath(),addHeader)
                     addHeader = False
 
                 else:
@@ -113,7 +113,7 @@ class MLAttributeManager:
                     mergedFile = self.mergeInstancesToFile(includeValueBased, candidateAttrDirectory, instances)
                     if mergedFile is None:
                         continue
-                    self.addArffFileContentToTargetFile(backgroundFilePath, mergedFile.getAbsolutePath(),addHeader)
+                    self.addArffFileContentToTargetFile(backgroundFilePath, FileUtils.getAbsPath(mergedFile), addHeader)
                     addHeader = False
 
     def mergeInstancesToFile(self, includeValueBased: bool, directory: str, instances: list):
@@ -200,7 +200,26 @@ class MLAttributeManager:
             self.generateTrainingSetDatasetAttributesWithoutValues(dataset)
             metadataTypes = [self.ATASET_BASED, self.OA_BASED]
 
-        self.appendARFFFilesPerMetadataTypeForDataset(directoryForDataset, metadataTypes);
+        self.appendARFFFilesPerMetadataTypeForDataset(directoryForDataset, metadataTypes)
+
+    def appendARFFFilesPerMetadataTypeForDataset(self, directoryForDataset: str, metaTypes: list):
+        classifiers = Properties.classifiersForMLAttributesGeneration.split(',')
+        seperator = os.path.sep
+        for classifier in classifiers:
+            for metadataType in metaTypes:
+                i=1
+                fileName = directoryForDataset + seperator + classifier + "_" + metadataType + "_candidateAttributesData" + i + '.arff'
+                targetFile = directoryForDataset + seperator + classifier + "_" + metadataType + "_candidateAttributesData" + 0
+                arffToAppendFrom = fileName
+                while os.path.exists(arffToAppendFrom):
+                    MLAttributeManager.addArffFileContentToTargetFile(targetFile, fileName, False)
+                    FileUtils.deleteFile(arffToAppendFrom)
+                    i += 1
+                    fileName = directoryForDataset + seperator + classifier + "_" + metadataType + "_candidateAttributesData" + i + '.arff'
+                    arffToAppendFrom = fileName
+
+                mainFile = targetFile + '.arff'
+                FileUtils.renameFile(mainFile, directoryForDataset + seperator + classifier + "_" + metadataType + "_candidateAttributesData" +  '.arff')
 
     def getBackgroundFilePath(self, dataset: Dataset, includeValueBased: bool):
         backgroundFilePath = ''
@@ -314,7 +333,100 @@ class MLAttributeManager:
                     # wrapperResultsLock.lock(); #TODO: part of the pararell stream
                     if (len(candidateAttributesList[classifier]) % 1000) == 0:
                         date = Date()
-                        Logger.Info(date + ": Finished processing " + ((position[0] * MLAttributeManager.ITERATION) + len(candidateAttributesList[classifier]) + '/' + nonUnaryOperatorAssignments.size() + ' elements for background model'))
+                        Logger.Info(date.__str__() + ": Finished processing " + ((position[0] * MLAttributeManager.ITERATION) + len(candidateAttributesList[classifier]) + '/' + nonUnaryOperatorAssignments.size() + ' elements for background model'))
+
+                    if (len(candidateAttributesList[classifier]) % MLAttributeManager.ITERATION) == 0:
+                        self.savePartArffCandidateAttributes(candidateAttributesList,classifier,dataset,position[0])
+                        position[0] += 1
+                        candidateAttributesList[classifier].clear()
+                    # wrapperResultsLock.unlock(); #TODO: part of the pararell stream
+                except Exception as ex:
+                    Logger.Error("Error in ML features generation : " + oa.getName() + "  :  " + ex)
+
+
+            self.savePartArffCandidateAttributes(candidateAttributesList,classifier,dataset,position[0])
+
+        finishDate = Date()
+        diffInMillies = finishDate - startDate
+        Logger.Info("Getting candidate attributes for dataset " + dataset.getName() + " took " + diffInMillies.second + " seconds")
+
+    def generateTrainingSetDatasetAttributesWithoutValues(self, dataset):
+        Logger.Info("Generating dataset attributes for dataset: " + dataset.name)
+
+        # DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+        startDate = Date()
+        # The structure: Classifier -> candidate feature (operator assignment, to be exact) -> meta-feature type -> A map of feature indices and values
+        # { classifier:
+        #     { OperatorAssigment:
+        #           { meta-feature type: {indice, value}}
+        # TreeMap<String, HashMap<OperatorAssignment,HashMap<String,TreeMap<Integer,AttributeInfo>>>> candidateAttributesList = new TreeMap<>()
+        candidateAttributesList = {}
+
+        classifiers = Properties.classifiersForMLAttributesGeneration.split(',')
+
+        # obtaining the attributes for the dataset itself is straightforward
+        dba = DatasetBasedAttributes()
+        for classifier in classifiers:
+            candidateAttributesList[classifier] = {}
+            originalAuc = self.getOriginalAuc(dataset, classifier)
+
+            # Generate the dataset attributes
+            datasetAttributes = dba.getDatasetBasedFeatures(dataset, classifier)
+
+            # now we need to generate the candidate attributes and evaluate them. This requires a few preliminary steps:
+            # 1) Replicate the dataset and create the discretized features and add them to the dataset
+            unaryOperators = OperatorsAssignmentsManager.getUnaryOperatorsList()
+
+            # The unary operators need to be evaluated like all other operator assignments (i.e. attribtues generation)
+            unaryOperatorAssignments = OperatorsAssignmentsManager.getOperatorAssignments(dataset, None, unaryOperators, int(Properties.maxNumOfAttsInOperatorSource))
+            replicatedDataset = self.generateDatasetReplicaWithDiscretizedAttributes(dataset, unaryOperatorAssignments)
+
+            # 2) Obtain all other operator assignments (non-unary). IMPORTANT: this is applied on the REPLICATED dataset so we can take advantage of the discretized features
+            nonUnaryOperators = OperatorsAssignmentsManager.getNonUnaryOperatorsList()
+            nonUnaryOperatorAssignments = OperatorsAssignmentsManager.getOperatorAssignments(replicatedDataset, None, nonUnaryOperators, int(Properties.maxNumOfAttsInOperatorSource))
+
+            # 3) Generate the candidate attribute and generate its attributes
+            nonUnaryOperatorAssignments.addAll(unaryOperatorAssignments);
+
+            # oaList.parallelStream().forEach(oa -> {
+            # ReentrantLock wrapperResultsLock = new ReentrantLock();
+            # for (OperatorAssignment oa : nonUnaryOperatorAssignments) {
+            position = [0] #new int[]{0};
+
+            # TODO: keep it pararell, temporary changed to single thread
+            # nonUnaryOperatorAssignments.parallelStream().forEach(oa -> {
+            for oa in nonUnaryOperatorAssignments:
+                try:
+                    datasetReplica = dataset.replicateDataset()
+
+                    # Here we generate all the meta-features that are "parent dependent" and do not require us to generate the values of the new attribute
+                    oaba = OperatorAssignmentBasedAttributes()
+
+                    # TreeMap < Integer, AttributeInfo >
+                    candidateAttributeValuesFreeMetaFeatures = oaba.getOperatorAssignmentBasedMetaFeatures(dataset, oa)
+
+
+                    evaluationInfo = self.runClassifier(classifier, datasetReplica.generateSet(True), datasetReplica.generateSet(False))
+                    evaluationResults1 = evaluationInfo.getEvaluationStats()
+
+                    # synchronized (this){ #TODO: part of the pararell stream
+                    #     candidateAttributesList.get(classifier).put(oa, new HashMap<>());
+                    #     candidateAttributesList.get(classifier).get(oa).put(DATASET_BASED, datasetAttributes);
+                    candidateAttributesList[classifier][oa][MLAttributeManager.DATASET_BASED] =  datasetAttributes
+                    # Add the identifier of the classifier that was used
+                    classifierAttribute = AttributeInfo("Classifier", Column.columnType.Discrete, self.getClassifierIndex(classifier), 3)
+                    candidateAttributeValuesFreeMetaFeatures[candidateAttributeValuesFreeMetaFeatures.size()] = classifierAttribute
+                    candidateAttributesList[classifier][oa][MLAttributeManager.OA_BASED] = candidateAttributeValuesFreeMetaFeatures
+
+                    # candidateAttributeValuesDependentMetaFeatures = oaba.getGeneratedAttributeValuesMetaFeatures(dataset, oa, candidateAttribute)
+                    # candidateAttributesList[classifier][oa][MLAttributeManager.VALUES_BASED] = candidateAttributeValuesDependentMetaFeatures
+                    candidateAttributesList[classifier][oa][MLAttributeManager.OA_BASED][candidateAttributesList[classifier][oa][MLAttributeManager.OA_BASED].size()] = self.createClassAttribute(originalAuc, datasetReplica, evaluationResults1)
+
+
+                    # wrapperResultsLock.lock(); #TODO: part of the pararell stream
+                    if (len(candidateAttributesList[classifier]) % 1000) == 0:
+                        date = Date()
+                        Logger.Info(date.__str__() + ": Finished processing " + ((position[0] * MLAttributeManager.ITERATION) + len(candidateAttributesList[classifier]) + '/' + nonUnaryOperatorAssignments.size() + ' elements for background model'))
 
                     if (len(candidateAttributesList[classifier]) % MLAttributeManager.ITERATION) == 0:
                         self.savePartArffCandidateAttributes(candidateAttributesList,classifier,dataset,position[0])
@@ -456,5 +568,35 @@ class MLAttributeManager:
             instancesMapPerClassifier[attrKey] = self.generateValueMatrixPerClassifier(attrValue)
 
         return instancesMapPerClassifier
+
+    # Appends the content of an ARFF file to the end of another. Used to generate the all-but-one ARFF files
+    #  * @param targetFilePath The path of the file to which we want to write
+    #  * @param arffFilePath the source file
+    #  * @param addHeader whether the ARFF header needs to be copied as well. When this is set to 'true' the file will be overwritten
+    @staticmethod
+    def addArffFileContentToTargetFile(targetFilePath: str, arffFilePath: str, addHeader: bool):
+        targetFilePath += ".arff"
+        fileReader =  open(arffFilePath, 'r')
+        if addHeader:
+            fileWriter = open(targetFilePath, 'w')
+        else:
+            fileWriter = open(targetFilePath, 'a')
+
+        foundData = False
+        line = fileReader.readline()
+
+        while line:
+            if addHeader:
+                fileWriter.write(line + '\n')
+            else:
+                if not foundData and (line.lower().find("@data") != -1):
+                    foundData = True
+                    line = fileReader.readline()
+                if foundData:
+                    fileWriter.write(line + '\n')
+
+        fileReader.close()
+        fileWriter.flush()
+        fileWriter.close()
 
 
