@@ -5,4 +5,5 @@ Main
   -MLFilterEvaluator
     -MLAttributeManager
       -OperatorsAssignmentsManager
+      -Classifier
     -DatasetBasedAttributes

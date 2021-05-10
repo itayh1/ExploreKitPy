@@ -11,11 +11,18 @@ class Dataset:
         self.folds = folds
         self.targetClass = targetClass
         self.name = name
-        self.indicesOfTrainingFolds = None
-        self.indicesOfTestFolds = None
+        self.indicesOfTrainingFolds = []
+        self.indicesOfTestFolds = []
 
         self.maxNumOfDiscreteValuesForInstancesObject = maxNumOfValsPerDiscreteAttribtue
         # self.distinctValColumns = distinctValColumns
+
+        for fold in folds:
+            if not fold.isTestFold:
+                self.indicesOfTrainingFolds.extend(fold.getIndices())
+
+            else:
+                self.indicesOfTestFolds.extend(fold.getIndices())
 
 
     def getNumOfInstancesPerColumn(self):
@@ -57,3 +64,21 @@ class Dataset:
 
     def getDistinctValueCompliantColumns(self):
         pass
+
+    # Used to obtain either the training or test set of the dataset
+    def generateSet(self, getTrainingSet: bool):
+        # ArrayList<Attribute> attributes = new ArrayList<>();
+
+        # get all the attributes that need to be included in the set
+        # Todo: takes only discrete and numeric columns
+        # getAttributesListForClassifier(attributes)
+        dfCopy = self.df.copy(deep=True)
+        dfCopy.rename({})
+        if getTrainingSet:
+            finalSet = dfCopy.iloc[self.indicesOfTrainingFolds,:]
+            finalSet.name = 'trainSet'
+        else:
+            finalSet = dfCopy.iloc[self.indicesOfTestFolds, :]
+            finalSet.name = 'testSet'
+
+        return finalSet

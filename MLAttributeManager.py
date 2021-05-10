@@ -1,10 +1,10 @@
-
-
+import errno
 import os.path
 import FileUtils
 
 from ArffSaver import ArffSaver
 from AttributeInfo import AttributeInfo
+from Classifier import Classifier
 from Column import Column
 from Dataset import Dataset
 from DatasetBasedAttributes import DatasetBasedAttributes
@@ -186,9 +186,10 @@ class MLAttributeManager:
 
         try:
             os.mkdir(directoryForDataset)
-        except Exception as ex:
-            Logger.Warn(f'getDatasetMetaFeaturesInstances -> Error creating directory {directoryForDataset}\nError: {ex}')
-            return
+        except OSError as ex:
+            if ex.errno != errno.EEXIST:
+                Logger.Warn(f'getDatasetMetaFeaturesInstances -> Error creating directory {directoryForDataset}\nError: {ex}')
+                raise
 
         # List<String> metadataTypes;
         if includeValueBased:
@@ -460,12 +461,11 @@ class MLAttributeManager:
 
 
 
-    def runClassifier(self,classifierName: str, trainingSet, testSet):
+    def runClassifier(self, classifierName: str, trainingSet, testSet):
             try:
-                oam = OperatorsAssignmentsManager()
-                classifier = oam.getClassifier(classifierName)
+                classifier = Classifier(classifierName)
                 classifier.buildClassifier(trainingSet)
-
+                classifier.evaluateClassifier(testSet)
                 # The overall classification statistics
                 # Evaluation evaluation;
                 evaluation = Evaluation(trainingSet)
@@ -494,7 +494,7 @@ class MLAttributeManager:
             return replicatedDatast
 
 
-    def getOriginalAuc(self, dataset, classifier):
+    def getOriginalAuc(self, dataset: Dataset, classifier: str):
             # For each dataset and classifier combination, we need to get the results on the "original" dataset so we can later compare
             originalRunEvaluationInfo = self.runClassifier(classifier, dataset.generateSet(True), dataset.generateSet(False))
             originalRunEvaluationResults = originalRunEvaluationInfo.getEvaluationStats()
