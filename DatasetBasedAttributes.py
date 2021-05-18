@@ -109,32 +109,34 @@ class DatasetBasedAttributes:
 
         # If an index to the target class was not provided, it's the last attirbute.
         self.numOfClasses = dataset.getNumOfClasses()
-        self.numOfFeatures = dataset.getAllColumns(False).size() # the target class is not included
+        self.numOfFeatures = dataset.getNumOfFeatures() # dataset.getAllColumns(False).size() # the target class is not included
         self.numOfNumericAtributes = 0
         self.numOfDiscreteAttributes = 0
+        self.numericAttributesList = []
+        self.discreteAttributesList = []
 
-        for columnInfo in dataset.getAllColumns(False):
-            if pd.api.types.is_float_dtype(columnInfo):
+        for columnName, columnType in dataset.getColumnsDtypes(False):
+            if pd.api.types.is_float_dtype(columnType):
                 self.numOfNumericAtributes += 1
-                self.numericAttributesList.append(columnInfo)
+                self.numericAttributesList.append(columnName)
 
-            if pd.api.types.is_integer_dtype(columnInfo):
+            elif pd.api.types.is_integer_dtype(columnType):
                 self.numOfDiscreteAttributes += 1
-                self.discreteAttributesList.append(columnInfo)
+                self.discreteAttributesList.append(columnName)
 
 
         self.ratioOfNumericAttributes = self.numOfNumericAtributes / (self.numOfNumericAtributes + self.numOfDiscreteAttributes)
-        self.ratioOfDiscreteAttributes = self.ratioOfDiscreteAttributes / (self.numOfNumericAtributes + self.numOfDiscreteAttributes)
+        self.ratioOfDiscreteAttributes = self.numOfDiscreteAttributes / (self.numOfNumericAtributes + self.numOfDiscreteAttributes)
 
         # TODO check minority
         numOfAllClassItems = dataset.getNumOfTrainingDatasetRows()
         numOfMinorityClassItems = dataset.getNumOfRowsPerClassInTrainingSet()[dataset.getMinorityClassIndex()]
 
-        self.minorityClassPercentage = (float)((numOfMinorityClassItems / numOfAllClassItems) * 100)
+        self.minorityClassPercentage = ((numOfMinorityClassItems / numOfAllClassItems) * 100)
 
         numOfValuesperDiscreteAttribute = []
         for columnInfo in self.discreteAttributesList:
-            numOfValuesperDiscreteAttribute.append(columnInfo.values.unique.size)
+            numOfValuesperDiscreteAttribute.append(dataset.df[columnInfo].unique().shape[0])
             # numOfValuesperDiscreteAttribute.append((float)((DiscreteColumn)columnInfo.getColumn()).getNumOfPossibleValues())
 
         if len(numOfValuesperDiscreteAttribute) > 0:

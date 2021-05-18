@@ -1,7 +1,7 @@
 
 import numpy as np
 import pandas as pd
-import Fold
+from Fold import Fold
 
 class Dataset:
 
@@ -13,6 +13,9 @@ class Dataset:
         self.name = name
         self.indicesOfTrainingFolds = []
         self.indicesOfTestFolds = []
+        self.classes = df[targetClass].unique()
+        self.numOfTrainingInstancesPerClass = dict.fromkeys(self.classes, 0)
+        self.numOfTestInstancesPerClass = dict.fromkeys(self.classes, 0)
 
         self.maxNumOfDiscreteValuesForInstancesObject = maxNumOfValsPerDiscreteAttribtue
         # self.distinctValColumns = distinctValColumns
@@ -20,34 +23,82 @@ class Dataset:
         for fold in folds:
             if not fold.isTestFold:
                 self.indicesOfTrainingFolds.extend(fold.getIndices())
-
+                for cls in self.classes:
+                    self.numOfTrainingInstancesPerClass[cls] += fold.getNumOfInstancesPerClass(cls)
             else:
                 self.indicesOfTestFolds.extend(fold.getIndices())
+                for cls in self.classes:
+                    self.numOfTestInstancesPerClass[cls] += fold.getNumOfInstancesPerClass(cls)
 
 
     def getNumOfInstancesPerColumn(self):
-        pass
+        return self.df.shape[0]
 
     def getNumOfClasses(self):
-        pass
+        return self.df[self.targetClass].unique().shape[0]
+
+    # Return number of features not including target column
+    def getNumOfFeatures(self):
+        return self.df.shape[1] - 1
+
 
     def getAllColumns(self, includeTargetColumn: bool):
-        pass
+        if includeTargetColumn:
+            columns = self.df.columns
+        else:
+            columns = self.df.columns.drop(self.targetClass)
+        return self.df[columns]
+
+    # return list of types('columnName', dtype)
+    def getColumnsDtypes(self, includeTargetColumn: bool):
+        if includeTargetColumn:
+            columns = self.df.dtypes
+        else:
+            columns = self.df.dtypes.drop(self.targetClass)
+        return columns.items()
 
     def getNumOfTrainingDatasetRows(self):
-        pass
+        return len(self.indicesOfTrainingFolds)
 
     def getNumOfRowsPerClassInTrainingSet(self):
-        pass
+        return self.numOfTrainingInstancesPerClass
+
+    def getNumOfRowsPerClassInTestSet(self):
+        return self.numOfTestInstancesPerClass
 
     def getMinorityClassIndex(self):
-        pass
+        return min(self.numOfTrainingInstancesPerClass.keys(),
+                   key=(lambda key: self.numOfTrainingInstancesPerClass[key]))
 
     def getFolds(self):
-        pass
+        return self.folds
 
+    # Partitions the training folds into a set of LOO folds. One of the training folds is designated as "test",
+    # while the remaining folds are used for training. All possible combinations are returned.
+    # return list of Dataset
     def GenerateTrainingSetSubFolds(self):
-        pass
+        trainingFolds = []
+        for fold in self.folds:
+            if not fold.isTestFold():
+                trainingFolds.append(fold)
+
+        trainingDatasets = []
+        for i in range(len(trainingFolds)):
+            newFoldsList = []
+            for j in range(len(trainingFolds)):
+                currentFold = trainingFolds[j]
+                # if i==j, then this is the test fold
+                newFold = Fold(self.classes,(i==j))
+                newFold.setIndices(currentFold.getIndices())
+                # newFold.setNumOfInstancesInFold(currentFold.getNumOfInstancesInFold())
+                newFold.setInstancesClassDistribution(currentFold.getInstancesClassDistribution())
+                newFold.setIndicesPerClass(currentFold.getIndicesPerClass())
+                # newFold.setDistinctValMappings(currentFold.getDistinctValMappings())
+                newFoldsList.append(newFold)
+
+            # now that we have the folds, we can generate the Dataset object
+            subDataset = Dataset(self.df, newFoldsList, self.targetClass, self.name,self.randomSeed, self.maxNumOfDiscreteValuesForInstancesObject)
+            trainingDatasets.append(subDataset)
 
     def getIndicesOfTrainingInstances(self):
         pass

@@ -21,7 +21,7 @@ class Classifier:
     def buildClassifier(self, trainingSet: pd.DataFrame):
         X = trainingSet.drop(labels=['class'], axis=1)
 
-        self.saveValuesOfCategoricalColumns(X)
+        self._saveValuesOfCategoricalColumns(X)
 
         X = pd.get_dummies(X)
 
@@ -31,7 +31,7 @@ class Classifier:
     def evaluateClassifier(self, testSet: pd.DataFrame) -> EvaluationInfo:
         X = testSet.drop(labels=['class'], axis=1)
 
-        X = self.getDataframeWithCategoricalColumns(X)
+        X = self._getDataframeWithCategoricalColumns(X)
 
         X = pd.get_dummies(X)
 
@@ -40,12 +40,25 @@ class Classifier:
 
         return EvaluationInfo(self.cls, scoresDist)
 
+    # Returns 2 lists, first is the the true/actual values and the second one is the predictions
+    def predictClassifier(self, testSet: pd.DataFrame):
+        X = testSet.drop(labels=['class'], axis=1)
+
+        X = self._getDataframeWithCategoricalColumns(X)
+
+        X = pd.get_dummies(X)
+
+        # Returns ndarray of shape (n_samples, n_classes)
+        preds = self.cls.predict(X)
+
+        return testSet['class'].values, preds
+
     # Save categorical columns for one-hot encoding in test
-    def saveValuesOfCategoricalColumns(self, df: pd.DataFrame):
+    def _saveValuesOfCategoricalColumns(self, df: pd.DataFrame):
         self.categoricalColumnsMap = {col: df[col].unique() for col in df.select_dtypes(include='object').columns}
 
     # Set df's categorical columns to Categorical type to remember missing categories in test
-    def getDataframeWithCategoricalColumns(self, df: pd.DataFrame):
+    def _getDataframeWithCategoricalColumns(self, df: pd.DataFrame):
         for columnsName, categories in self.categoricalColumnsMap.items():
             df[columnsName] = df[columnsName].astype(CategoricalDtype(categories))
         return df

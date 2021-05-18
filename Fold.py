@@ -18,13 +18,6 @@ class Fold:
         self.indicesByClass: dict = {key:[] for key in classes}    # dict[class] -> indices
         self.distinctValMappings = None
         self.numOfInstancesInFold: int = 0
-    # def __init__(self, numOfClasses: int, isTestFold: bool):
-    #     self.indices: list = []
-    #     self.numInstancesPerClass: list = numOfClasses * [0]
-    #     self.isTestFold: bool = isTestFold
-    #     self.indicesByClass: dict = {i:[] for i in range(numOfClasses)}    # class -> indices
-    #     self.distinctValMappings = None
-    #     self.numOfInstancesInFold: int = 0
 
     def getIndices(self):
         return self.indices
@@ -104,3 +97,16 @@ class Fold:
         self.indicesByClass[classIdx].append(index)
         self.numInstancesPerClass[classIdx] += 1
         self.numOfInstancesInFold += 1
+
+    # Sets the indices of the fold
+    def setIndices(self, indices: list):
+        self.indices = indices
+
+    def setInstancesClassDistribution(self, numInstancesPerClass):
+        self.numInstancesPerClass = numInstancesPerClass
+
+    def setIndicesPerClass(self, indicesByClass: dict):
+        self.indicesByClass = indicesByClass
+    
+
+

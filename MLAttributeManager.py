@@ -20,6 +20,7 @@ from Properties import Properties
 from Serializer import Serializer
 
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import roc_auc_score
 import pandas as pd
 
 
@@ -465,20 +466,20 @@ class MLAttributeManager:
             try:
                 classifier = Classifier(classifierName)
                 classifier.buildClassifier(trainingSet)
-                classifier.evaluateClassifier(testSet)
+                evaluationInfo = classifier.evaluateClassifier(testSet)
                 # The overall classification statistics
                 # Evaluation evaluation;
-                evaluation = Evaluation(trainingSet)
-                evaluation.evaluateModel(classifier, testSet)
+                # evaluation = Evaluation(trainingSet)
+                # evaluation.evaluateModel(classifier, testSet)
 
                 # The confidence score for each particular instance
-                scoresDist = []
-                for i in range(testSet.size()):
-                    testInstance = testSet[i]
-                    score = classifier.distributionForInstance(testInstance)
-                    scoresDist.append(score)
+                # scoresDist = []
+                # for i in range(testSet.size()):
+                #     testInstance = testSet[i]
+                #     score = classifier.distributionForInstance(testInstance)
+                #     scoresDist.append(score)
 
-                return EvaluationInfo(evaluation, scoresDist)
+                return evaluationInfo
 
             except Exception as ex:
                 Logger.Error("problem running classifier. Exception:"+ex)
@@ -496,9 +497,20 @@ class MLAttributeManager:
 
     def getOriginalAuc(self, dataset: Dataset, classifier: str):
             # For each dataset and classifier combination, we need to get the results on the "original" dataset so we can later compare
-            originalRunEvaluationInfo = self.runClassifier(classifier, dataset.generateSet(True), dataset.generateSet(False))
-            originalRunEvaluationResults = originalRunEvaluationInfo.getEvaluationStats()
-            return self.CalculateAUC(originalRunEvaluationResults, dataset)
+            trainSet = dataset.generateSet(True)
+            testSet = dataset.generateSet(False)
+            originalRunEvaluationInfo = self.runClassifier(classifier, trainSet, testSet)
+            # originalRunEvaluationResults = originalRunEvaluationInfo.getEvaluationStats()
+            return self.CalculateAUC(originalRunEvaluationInfo, testSet)
+
+    def CalculateAUC(self, evaluation, dataset: Dataset) -> float:
+        # auc = 0.0
+        # for i in range(dataset.getNumOfClasses()):
+        #     auc += evaluation.areaUnderROC(i)
+        #
+        # auc = auc / dataset.getNumOfClasses()
+        # return auc
+        return roc_auc_score(dataset['class'], evaluation.scoreDistPerInstance[:, 1])
 
     # Returns an integer that is used to represent the classifier in the generated Instances object
     def getClassifierIndex(classifier: str) -> int:
@@ -549,13 +561,7 @@ class MLAttributeManager:
         #     }
         # }
 
-    def CalculateAUC(self, evaluation: Evaluation, dataset: Dataset) -> float:
-        auc = 0.0
-        for i in range(dataset.getNumOfClasses()):
-            auc += evaluation.areaUnderROC(i)
 
-        auc = auc / dataset.getNumOfClasses()
-        return auc
 
 
     # Creates  data matrices from a HashMap of AttributeInfo objects per metadata type and per classifier
