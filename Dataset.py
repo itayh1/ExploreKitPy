@@ -41,8 +41,7 @@ class Dataset:
     def getNumOfFeatures(self):
         return self.df.shape[1] - 1
 
-
-    def getAllColumns(self, includeTargetColumn: bool):
+    def getAllColumns(self, includeTargetColumn: bool) -> pd.DataFrame:
         if includeTargetColumn:
             columns = self.df.columns
         else:
@@ -60,18 +59,21 @@ class Dataset:
     def getNumOfTrainingDatasetRows(self):
         return len(self.indicesOfTrainingFolds)
 
-    def getNumOfRowsPerClassInTrainingSet(self):
+    def getNumOfRowsPerClassInTrainingSet(self) -> dict:
         return self.numOfTrainingInstancesPerClass
 
-    def getNumOfRowsPerClassInTestSet(self):
+    def getNumOfRowsPerClassInTestSet(self) -> dict:
         return self.numOfTestInstancesPerClass
 
-    def getMinorityClassIndex(self):
+    def getMinorityClassIndex(self) -> str:
         return min(self.numOfTrainingInstancesPerClass.keys(),
                    key=(lambda key: self.numOfTrainingInstancesPerClass[key]))
 
     def getFolds(self):
         return self.folds
+
+    def getTargetClassColumn(self):
+        return self.df[self.targetClass]
 
     # Partitions the training folds into a set of LOO folds. One of the training folds is designated as "test",
     # while the remaining folds are used for training. All possible combinations are returned.
@@ -79,7 +81,7 @@ class Dataset:
     def GenerateTrainingSetSubFolds(self):
         trainingFolds = []
         for fold in self.folds:
-            if not fold.isTestFold():
+            if not fold.isTestFold:
                 trainingFolds.append(fold)
 
         trainingDatasets = []
@@ -99,6 +101,7 @@ class Dataset:
             # now that we have the folds, we can generate the Dataset object
             subDataset = Dataset(self.df, newFoldsList, self.targetClass, self.name,self.randomSeed, self.maxNumOfDiscreteValuesForInstancesObject)
             trainingDatasets.append(subDataset)
+        return trainingDatasets
 
     def getIndicesOfTrainingInstances(self):
         pass
@@ -117,7 +120,7 @@ class Dataset:
         pass
 
     # Used to obtain either the training or test set of the dataset
-    def generateSet(self, getTrainingSet: bool):
+    def generateSet(self, getTrainingSet: bool) -> pd.DataFrame:
         # ArrayList<Attribute> attributes = new ArrayList<>();
 
         # get all the attributes that need to be included in the set
@@ -133,3 +136,8 @@ class Dataset:
             finalSet.name = 'testSet'
 
         return finalSet
+
+    def replicateDatasetByColumnIndices(self, indices: list):
+        newDataset = Dataset(self.df.copy(), self.folds, self.targetClass, self.name,
+                             self.randomSeed, self.maxNumOfDiscreteValuesForInstancesObject)
+        return newDataset

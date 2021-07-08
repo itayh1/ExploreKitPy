@@ -1,12 +1,12 @@
 from Dataset import Dataset
+from Logger import Logger
+from Operators.Operator import Operator, operatorType, outputType
 
 import numpy as np
 import pandas as pd
 
-from Logger import Logger
 
-
-class EqualRangeDiscretizerUnaryOperator:
+class EqualRangeDiscretizerUnaryOperator(Operator):
 
     upperBoundPerBin: list
 
@@ -66,3 +66,14 @@ class EqualRangeDiscretizerUnaryOperator:
                 return i
 
         return len(self.upperBoundPerBin) - 1
+
+    def getType(self) -> operatorType:
+        return operatorType.Unary
+
+    def getOutputType(self) -> outputType:
+        return outputType.Numeric
+
+    def getName(self) -> str:
+        return 'EqualRangeDiscretizerUnaryOperator'
+
+

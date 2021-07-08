@@ -1,6 +1,11 @@
+from builtins import staticmethod
+
 from Dataset import Dataset
-from EqualRangeDiscretizerUnaryOperator import EqualRangeDiscretizerUnaryOperator
-from Operator import Operator
+from OperatorAssignment import OperatorAssignment
+from Operators.AddBinaryOperator import AddBinaryOperator
+from Operators.CombinationGenerator import CombinationGenerator
+from Operators.EqualRangeDiscretizerUnaryOperator import EqualRangeDiscretizerUnaryOperator
+from Operators import Operator
 from Properties import Properties
 
 
@@ -38,6 +43,78 @@ class OperatorsAssignmentsManager:
         else:
             raise Exception("unindentified unary operator: " + operatorName)
 
+    @staticmethod
+    # Returns a list of nonUnary operators from the configuration file (i.e. all other operator types)
+    def getNonUnaryOperatorsList():
+        operatorNames = Properties.nonUnaryOperators.split(',')
+        operatorsList = []
+        for unaryOperator in operatorNames:
+            operator = OperatorsAssignmentsManager.getNonUnaryOperator(unaryOperator)
+            operatorsList.append(operator)
+
+        return operatorsList
+
+    @staticmethod
+    # Returns a non-unary operator by name
+    def getNonUnaryOperator(operatorName: str):
+        timeSpan = 0
+        if operatorName.startswith("TimeBasedGroupByThen"):
+            timeSpan = float(operatorName.split("_")[1])
+            operatorName = operatorName.split("_")[0]
+
+        # switch (operatorName) {
+        # GroupByThenOperators
+        # if operatorName == "GroupByThenAvg":
+        #     GroupByThenAvg gbtAvg = new GroupByThenAvg();
+        #     return gbtAvg
+        # elif operatorName == "GroupByThenMax":
+        #     GroupByThenMax gbtMmax = new GroupByThenMax();
+        #     return gbtMmax
+        # elif operatorName == "GroupByThenMin":
+        #     GroupByThenMin gbtMin = new GroupByThenMin();
+        #     return gbtMin
+        # elif operatorName == "GroupByThenCount":
+        #     GroupByThenCount gbtCount = new GroupByThenCount();
+        #     return gbtCount
+        # elif operatorName == "GroupByThenStdev":
+        #     GroupByThenStdev gbtStdev = new GroupByThenStdev();
+        #     return gbtStdev
+
+        # BinaryOperators
+        if operatorName == "AddBinaryOperator":
+            abo = AddBinaryOperator()
+            return abo
+        # elif operatorName == "SubtractBinaryOperator":
+        #     SubtractBinaryOperator sbo = new SubtractBinaryOperator();
+        #     return sbo;
+        # elif operatorName == "MultiplyBinaryOperator":
+        #     MultiplyBinaryOperator mbo = new MultiplyBinaryOperator();
+        #     return mbo;
+        # elif operatorName == "DivisionBinaryOperator":
+        #     DivisionBinaryOperator dbo = new DivisionBinaryOperator();
+        #     return dbo;
+
+        # Todo: ignore time features
+        # TimeBasedGroupByThen
+        # elif operatorName == "TimeBasedGroupByThenCountAndAvg":
+        #     TimeBasedGroupByThenCountAndAvg tbgbycaa = new TimeBasedGroupByThenCountAndAvg(timeSpan);
+        #     return tbgbycaa;
+        # elif operatorName == "TimeBasedGroupByThenCountAndCount":
+        #     TimeBasedGroupByThenCountAndCount tbgbtccac = new TimeBasedGroupByThenCountAndCount(timeSpan);
+        #     return tbgbtccac;
+        # elif operatorName == "TimeBasedGroupByThenCountAndMax":
+        #     TimeBasedGroupByThenCountAndMax tbgbtcam = new TimeBasedGroupByThenCountAndMax(timeSpan);
+        #     return tbgbtcam;
+        # elif operatorName == "TimeBasedGroupByThenCountAndMin":
+        #     TimeBasedGroupByThenCountAndMin tbgbtcamm = new TimeBasedGroupByThenCountAndMin(timeSpan);
+        #     return tbgbtcamm;
+        # elif operatorName == "TimeBasedGroupByThenCountAndStdev":
+        #     TimeBasedGroupByThenCountAndStdev tbgbtcas = new TimeBasedGroupByThenCountAndStdev(timeSpan);
+        #     return tbgbtcas;
+        else:
+            raise Exception("unindentified unary operator: " + operatorName)
+
+
      # Receives a dataset with a set of attributes and a list of operators and generates all possible source/target/operator/secondary operator assignments
      # @param dataset The dataset with the attributes that need to be analyzed
      # @param attributesToInclude A list of attributes that must be included in either the source or target of every generated assignment. If left empty, there are no restrictions
@@ -53,7 +130,7 @@ class OperatorsAssignmentsManager:
         operatorsAssignments = []
         for i in range(maxCombinationSize, 0, -1): # (int i=maxCombinationSize; i>0; i--) {
             # List<List<ColumnInfo>>
-            sourceAttributeCombinations = getAttributeCombinations(dataset.getAllColumns(false), i)
+            sourceAttributeCombinations = OperatorsAssignmentsManager.getAttributeCombinations(dataset.getAllColumns(False), i)
 
             # for each of the candidate source attributes combinations
             for sources in sourceAttributeCombinations:
@@ -69,8 +146,8 @@ class OperatorsAssignmentsManager:
                 if len(attributesToInclude) > 0:
                     tempList = sources.copy()
                     tempList = [item for item in tempList if item in attributesToInclude]
-                    if len(tempList) == 0: continue
-
+                    if len(tempList) == 0:
+                        continue
 
                 # Now we check all the operators on the source attributes alone.
                 for operator in operators:
@@ -81,12 +158,12 @@ class OperatorsAssignmentsManager:
                     # now we pair the source attributes with a target attribute and check again
                     for targetColumn in dataset.getAllColumns(False):
                         # if (sources.contains(targetColumn)) { continue; }
-                        if overlapExistsBetweenSourceAndTargetAttributes(sources,targetColumn): continue
+                        if OperatorsAssignmentsManager.overlapExistsBetweenSourceAndTargetAttributes(sources,targetColumn): continue
                         tempList = []
                         tempList.append(targetColumn)
                         if operator.isApplicable(dataset, sources, tempList):
                             os = OperatorAssignment(sources, tempList, getOperator(operator), None)
-                            operatorsAssignments.add(os)
+                            operatorsAssignments.append(os)
 
     @staticmethod
     def overlapExistsBetweenSourceAndTargetAttributes(sourceAtts: list, targetAtt) -> bool:
@@ -138,4 +215,18 @@ class OperatorsAssignmentsManager:
 
         return overlap
 
+    # Returns lists of column-combinations
+    # @param attributes
+    # @param numOfAttributesInCombination
+    @staticmethod
+    def getAttributeCombinations(self, attributes: list, numOfAttributesInCombination: int) -> list:
+        attributeCombinations = []
+        gen = CombinationGenerator(len(attributes), numOfAttributesInCombination)
+        while gen.hasMore():
+            indices = gen.getNext()
+            tempColumns = []
+            for index in indices:
+                tempColumns.append(attributes[index])
+            attributeCombinations.append(tempColumns)
 
+        return attributeCombinations

@@ -1,6 +1,8 @@
+
+
 class ClassificationResults:
 
-    def __int__(self, itemClassifications: list, auc: float, logloss: float, tprFprValues: dict,
+    def __init__(self, itemClassifications: list, auc: float, logloss: float, tprFprValues: dict,
                 recallPrecisionValues: dict, fMeasureValuesPerRecall: dict):
         self.itemClassifications = itemClassifications
         self.auc = auc

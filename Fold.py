@@ -91,6 +91,12 @@ class Fold:
     def getNumOfInstancesPerClass(self, classIdx):
         return self.numInstancesPerClass[classIdx]
 
+    def getIndicesPerClass(self) -> dict:
+        return self.indicesByClass
+
+    def getInstancesClassDistribution(self) -> dict:
+        return self.numInstancesPerClass
+
     # Adds an instance to the fold and updates the counter and indices list
     def addInstance(self, index: int, classIdx):
         self.indices.append(index)
