@@ -35,3 +35,6 @@ def getFilenameFromPath(filePath: str) -> str:
 
 def renameFile(oldFilePath: str, newFilePath: str):
     rename(r'{}'.format(oldFilePath), r'{}'.format(newFilePath))
+
+def isFileExist(filePath: str) -> bool:
+    return isfile(filePath)

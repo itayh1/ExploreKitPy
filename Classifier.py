@@ -38,7 +38,7 @@ class Classifier:
         # Returns ndarray of shape (n_samples, n_classes)
         scoresDist = self.cls.predict_proba(X)
 
-        return EvaluationInfo(self.cls, scoresDist)
+        return EvaluationInfo(self.cls, scoresDist, testSet['class'])
 
     # Returns 2 lists, first is the the true/actual values and the second one is the predictions
     def predictClassifier(self, testSet: pd.DataFrame):

@@ -1,3 +1,8 @@
+from typing import Dict
+
+import numpy as np
+import pandas as pd
+
 from ClassificationResults import ClassificationResults
 from Dataset import Dataset
 from FilterEvaluator import FilterEvaluator
@@ -7,44 +12,45 @@ import math
 
 class InformationGainFilterEvaluator(FilterEvaluator):
 
-    def initFilterEvaluator(self, columnsToAnalyze: list):
-        self.valuesPerKey: dict = {} #<List<Integer>, int[]>
+    def __init__(self):
+        super().__init__()
 
     def produceScore(self, analyzedDatasets: Dataset, currentScore: ClassificationResults, completeDataset: Dataset, oa: OperatorAssignment, candidateAttribute):
         if candidateAttribute != None:
-            analyzedDatasets.addColumn(candidateAttribute)
+            analyzedDatasets = pd.concat([analyzedDatasets, candidateAttribute], axis=1)
 
 
         # if any of the analyzed attribute is not discrete, it needs to be discretized
-        bins = []
-        super().discretizeColumns(analyzedDatasets, bins)
+        bins = [0]*10
+        FilterEvaluator.discretizeColumns(self, analyzedDatasets, bins)
         # Todo: distinct value. make sure to ignore
         # if (analyzedDatasets.getDistinctValueColumns() != None) and (analyzedDatasets.getDistinctValueColumns().size() > 0):
         #     return self.produceScoreWithDistinctValues(analyzedDatasets, currentScore, oa, candidateAttribute)
-
 
         valuesPerKey = {}
         targetColumn = analyzedDatasets.getTargetClassColumn()
 
         # In filter evaluators we evaluate the test set, the same as we do in wrappers. The only difference here is that we
         # train and test on the test set directly, while in the wrappers we train a model on the training set and then apply on the test set
-        for  i in range(analyzedDatasets.getNumOfTestDatasetRows()):
-            j = analyzedDatasets.getIndicesOfTestInstances().get(i);
-            sourceValues: list = [c.getColumn().getValue(j) for c in super().analyzedColumns]
-            targetValue = targetColumn.getColumn().getValue(j)
-            if sourceValues not in valuesPerKey:
-                valuesPerKey[sourceValues] = [0] * analyzedDatasets.getTargetClassColumn().getColumn().getNumOfPossibleValues()
-            valuesPerKey.get(sourceValues)[targetValue] += 1
+        # for i in range(analyzedDatasets.getNumOfTestDatasetRows()):
+        for j in analyzedDatasets.getIndicesOfTestInstances():
+            # sourceValues: list = [self.analyzedColumns[c][j] for c in self.analyzedColumns.columns]
+            sourceValues = self.analyzedColumns[j][[self.analyzedColumns.columns]]
+            targetValue = targetColumn[j]
+            key = hash(sourceValues.tobytes())
+            if key not in valuesPerKey:
+                valuesPerKey[key] = np.zeros(analyzedDatasets.getTargetClassColumn().getColumn().getNumOfPossibleValues())
+            valuesPerKey[sourceValues][targetValue] += 1
 
-        return self.calculateIG(analyzedDatasets)
+        return self.calculateIG(analyzedDatasets, valuesPerKey)
 
     # def produceScoreWithDistinctValues(self, dataset:Dataset , currentScore:ClassificationResults, oa:OperatorAssignment, candidateAttribute:ColumnInfo):
     #     pass
 
-    def calculateIG(self, dataset: Dataset):
+    def calculateIG(self, dataset: Dataset, valuesPerKey: Dict[int, np.ndarray]):
         IG = 0.0
-        for val in self.valuesPerKey.values():
-            numOfInstances = sum(val)
+        for val in valuesPerKey.values():
+            numOfInstances = val.sum()
             tempIG = 0
             for value in val:
                 if value != 0:

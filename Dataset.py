@@ -1,3 +1,4 @@
+from typing import List
 
 import numpy as np
 import pandas as pd
@@ -5,7 +6,7 @@ from Fold import Fold
 
 class Dataset:
 
-    def __init__(self, df: pd.DataFrame, folds: list, targetClass: str, name: str, seed: int, maxNumOfValsPerDiscreteAttribtue: int):
+    def __init__(self, df: pd.DataFrame, folds: List[Fold], targetClass: str, name: str, seed: int, maxNumOfValsPerDiscreteAttribtue: int):
         self.randomSeed = seed
         self.df = df
         self.folds = folds
@@ -104,7 +105,7 @@ class Dataset:
         return trainingDatasets
 
     def getIndicesOfTrainingInstances(self):
-        pass
+        return self.indicesOfTrainingFolds
 
     def getNumberOfRows(self):
         pass
@@ -118,6 +119,10 @@ class Dataset:
 
     def getDistinctValueCompliantColumns(self):
         pass
+
+    # add column to the dataset
+    def addColumn(self, column):
+        self.df[column.name] = column
 
     # Used to obtain either the training or test set of the dataset
     def generateSet(self, getTrainingSet: bool) -> pd.DataFrame:
@@ -138,6 +143,11 @@ class Dataset:
         return finalSet
 
     def replicateDatasetByColumnIndices(self, indices: list):
+        newDataset = Dataset(self.df.copy(), self.folds, self.targetClass, self.name,
+                             self.randomSeed, self.maxNumOfDiscreteValuesForInstancesObject)
+        return newDataset
+
+    def replicateDataset(self):
         newDataset = Dataset(self.df.copy(), self.folds, self.targetClass, self.name,
                              self.randomSeed, self.maxNumOfDiscreteValuesForInstancesObject)
         return newDataset

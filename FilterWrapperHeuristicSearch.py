@@ -3,6 +3,8 @@ from datetime import datetime
 
 from AucWrapperEvaluator import AucWrapperEvaluator
 from Date import Date
+from FilterPreRankerEvaluator import FilterPreRankerEvaluator
+from OperatorsAssignmentsManager import OperatorsAssignmentsManager
 from Properties import Properties
 from MLFilterEvaluator import MLFilterEvaluator
 from Dataset import Dataset
@@ -24,8 +26,7 @@ class FilterWrapperHeuristicSearch:
 
         preRankerEvaluator = None
         if bool(Properties.usePreRanker):
-            # preRankerEvaluator = new FilterPreRankerEvaluator( originalDataset, properties);
-            pass
+            preRankerEvaluator = FilterPreRankerEvaluator(originalDataset)
 
         if Properties.wrapperApproach == 'AucWrapperEvaluator':
             wrapperEvaluator = AucWrapperEvaluator()
@@ -34,36 +35,36 @@ class FilterWrapperHeuristicSearch:
             raise Exception('Missing wrapper approach')
 
         experimentStartDate = Date()
-        Logger.Info("Experiment Start Date/Time: " + experimentStartDate + " for dataset " + originalDataset.name);
+        Logger.Info("Experiment Start Date/Time: " + str(experimentStartDate) + " for dataset " + originalDataset.name)
 
         # The first step is to evaluate the initial attributes, so we get a reference point to how well we did
-        # wrapperEvaluator.EvaluationAndWriteResultsToFile(originalDataset, "", 0, runInfo, true,0, -1, -1, properties);
+        wrapperEvaluator.EvaluationAndWriteResultsToFile(originalDataset, "", 0, runInfo, True, 0, -1, -1)
 
-        # //now we create the replica of the original dataset, to which we can add columns
-        # Dataset dataset = originalDataset.replicateDataset();
-        #
-        # //Get the training set sub-folds, used to evaluate the various candidate attributes
-        # List<Dataset> originalDatasetTrainingFolds = originalDataset.GenerateTrainingSetSubFolds();
-        # List<Dataset> subFoldTrainingDatasets = dataset.GenerateTrainingSetSubFolds();
-        #
-        # Date date = new Date();
-        #
-        # //We now apply the wrapper on the training subfolds in order to get the baseline score. This is the score a candidate attribute needs to "beat"
-        # double currentScore = wrapperEvaluator.produceAverageScore(subFoldTrainingDatasets, null, null, null, null, properties);
-        # Logger.Info("Initial score: " + Double.toString(currentScore)  + " : " + date.toString());
-        #
-        # //The probabilities assigned to each instance using the ORIGINAL dataset (training folds only)
-        # Logger.Info("Producing initial classification results"  + " : " + date.toString());
-        # List<ClassificationResults> currentClassificationProbs = wrapperEvaluator.produceClassificationResults(originalDatasetTrainingFolds, properties);
-        # date = new Date();
-        # Logger.Info("  .....done " + date.toString());
-        #
-        # //Apply the unary operators (discretizers, normalizers) on all the original features. The attributes generated
-        # //here are different than the ones generated at later stages because they are included in the dataset that is
-        # //used to generate attributes in the iterative search phase
-        # Logger.Info("Starting to apply unary operators:   "  + " : " + date.toString());
-        # OperatorsAssignmentsManager oam = new OperatorsAssignmentsManager(properties);
-        # List<OperatorAssignment> candidateAttributes = oam.applyUnaryOperators(dataset,null, filterEvaluator, subFoldTrainingDatasets, currentClassificationProbs);
+        # now we create the replica of the original dataset, to which we can add columns
+        dataset = originalDataset.replicateDataset()
+
+        # Get the training set sub-folds, used to evaluate the various candidate attributes
+        originalDatasetTrainingFolds = originalDataset.GenerateTrainingSetSubFolds()
+        subFoldTrainingDatasets = dataset.GenerateTrainingSetSubFolds()
+
+        date = Date()
+
+        # We now apply the wrapper on the training subfolds in order to get the baseline score. This is the score a candidate attribute needs to "beat"
+        currentScore = wrapperEvaluator.produceAverageScore(subFoldTrainingDatasets, null, null, null, null, properties);
+        Logger.Info(f"Initial score: {str(currentScore)} : {date}")
+
+        # The probabilities assigned to each instance using the ORIGINAL dataset (training folds only)
+        Logger.Info(f"Producing initial classification results: {date}")
+        currentClassificationProbs = wrapperEvaluator.produceClassificationResults(originalDatasetTrainingFolds)
+        date = Date()
+        Logger.Info(f"  .....done {date}")
+
+        # Apply the unary operators (discretizers, normalizers) on all the original features. The attributes generated
+        # here are different than the ones generated at later stages because they are included in the dataset that is
+        # used to generate attributes in the iterative search phase
+        Logger.Info(f"Starting to apply unary operators: {date}")
+        oam = OperatorsAssignmentsManager()
+        candidateAttributes = oam.applyUnaryOperators(dataset,null, filterEvaluator, subFoldTrainingDatasets, currentClassificationProbs)
         # date = new Date();
         # Logger.Info("  .....done " + date.toString());
         #

@@ -1,6 +1,10 @@
+import os
+from typing import List
+
 import numpy as np
 from sklearn.metrics import roc_auc_score
 
+import FileUtils
 from ClassificationItem import ClassificationItem
 from ClassificationResults import ClassificationResults
 from Classifier import Classifier
@@ -8,6 +12,7 @@ from Dataset import Dataset
 from EvaluationInfo import EvaluationInfo
 from Logger import Logger
 from Date import Date
+from OperatorAssignment import OperatorAssignment
 from Properties import Properties
 
 
@@ -204,3 +209,110 @@ class AucWrapperEvaluator:
                 return key
         return 0
 
+    # This procedure should only be called when an attribute (or attributes) have been selected. It will
+    # several statistics into the output file, statistics whose calculation requires additional time to the
+    # one spent by Weka itself.
+    # @param newFile used to determine whether the text needs to be appended or override any existing text
+    def EvaluationAndWriteResultsToFile(self,dataset: Dataset, addedAttribute: str, iteration: int, runInfo: str,
+                newFile: bool, evaluatedAttsCounter: int, filterEvaluatorScore: float, wrapperEvaluationScore: float):
+
+        evaluation = self.runClassifier(Properties.classifier,dataset.generateSet(True), dataset.generateSet(False))
+
+        # We calcualte the TPR/FPR rate. We do it ourselves because we want all the values
+        tprFprValues = self.calculateTprFprRate(evaluation, dataset)
+
+        # The TRR/FPR values enable us to calculate the precision/recall values.
+        recallPrecisionValues = self.calculateRecallPrecisionValues(dataset,
+                                        tprFprValues, Properties.precisionRecallIntervals)
+
+
+        # Next, we calculate the F-Measure at the selected points
+        fMeasureValuesPerRecall = {}
+        fMeasurePrecisionValues = Properties.FMeausrePoints
+        for recallVal in fMeasurePrecisionValues:
+            precision = recallPrecisionValues[recallVal]
+            F1Measure = (2*precision*recallVal)/(precision+recallVal)
+            fMeasureValuesPerRecall[recallVal], = F1Measure
+
+        # now we can write everything to file
+        sb = ''
+
+        # If it's a new file, we need to create a header for the file
+        if newFile:
+            sb += "Iteration,Added_Attribute,LogLoss,AUC,"
+            for recallVal in fMeasureValuesPerRecall.keys():
+                sb += f"F1_Measure_At_Recall_{recallVal},"
+
+            for recallVal in recallPrecisionValues.keys():
+                sb += f"Precision_At_Recall_Val_{recallVal},"
+
+            sb += "Chosen_Attribute_Filter_Score,Chosen_Attribute_Wrapper_Score,Num_Of_Evaluated_Attributes_In_Iteration"
+            sb += "Iteration_Completion_time"
+            sb += os.linesep
+
+        sb += str(iteration) + ","
+        sb += f'"{addedAttribute}",'
+
+        # The LogLoss
+        sb += str(self.CalculateLogLoss(evaluation, dataset))+ ","
+
+        # The AUC
+        sb += str(roc_auc_score(evaluation.actualPred,
+                                evaluation.scoreDistPerInstance[:, dataset.getMinorityClassIndex()])) + ','
+        # evaluation.areaUnderROC(dataset.getMinorityClassIndex())).concat(","));
+
+        # The F1 measure
+        for recallVal in fMeasureValuesPerRecall.keys():
+            sb += str(fMeasureValuesPerRecall[recallVal]) + ","
+
+        # Recall/Precision values
+        for recallVal in recallPrecisionValues.keys():
+            sb += str(recallPrecisionValues[recallVal]) + ","
+
+        sb += str(filterEvaluatorScore) + ","
+        sb += str(wrapperEvaluationScore) + ","
+        sb += str(evaluatedAttsCounter) + ","
+
+        date = Date()
+        sb += date.__str__()
+
+        try:
+            filename= Properties.resultsFilePath + dataset.name + runInfo + ".csv"
+            if newFile:
+                fw = open(filename, "w")
+            else:
+                fw = open(filename, "a")
+            fw.write(sb + "\n")
+            fw.close()
+
+        except Exception as ex:
+            Logger.Error("IOException: " + ex)
+
+    # Calculates the score for each of the datasets in the list (subfolds) and returns the average score
+    def produceAverageScore(self, analyzedDatasets: List[Dataset], classificationResults: list,
+                            completeDataset: Dataset, oa: OperatorAssignment, candidateAttribute) -> float:
+        score = 0.0
+        for i, dataset in enumerate(analyzedDatasets):
+            # the ClassificationResult can be null for the initial run.
+            classificationResult = None
+            if classificationResults != None:
+                classificationResult = classificationResults[i]
+
+            score += self.produceScore(dataset, classificationResult, completeDataset, oa, candidateAttribute)
+        return score/len(analyzedDatasets)
+
+    def produceScore(self, analyzedDatasets: Dataset, currentScore: ClassificationResults, completeDataset: Dataset,
+                      oa: OperatorAssignment, candidateAttribute) -> float:
+        if candidateAttribute != None:
+            analyzedDatasets.addColumn(candidateAttribute)
+
+        evaluationResults = self.runClassifier(Properties.classifier,
+                                    analyzedDatasets.generateSet(True), analyzedDatasets.generateSet(False))
+
+        # in order to deal with multi-class datasets we calculate an average of all AUC scores (we may need to make this weighted)
+        auc = self.CalculateAUC(evaluationResults, analyzedDatasets, evaluationResults.actualPred)
+
+        if currentScore != None:
+            return auc - currentScore.getAuc()
+        else:
+            return auc

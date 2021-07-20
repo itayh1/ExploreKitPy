@@ -6,16 +6,17 @@ Main
     -MLAttributeManager
         -Classifier
         -DatasetBasedAttributes
-            -AucWrapperEvaluator (-> Run till here)
+            -AucWrapperEvaluator
             -IGScores
             -InformationGainFilterEvaluator
-            -EqualRangeDiscretizerUnaryOperator
+            -EqualRangeDiscretizerUnaryOperator (-> Run till here)
             -ChiSquareTest/TTest
         -OperatorsAssignmentsManager
             -UnaryOperator (e.g. Discretizer)
             -BinaryOperator (e.g. Add)
             -CombinationGenerator
-            -OperationAssignment (-> Code till here)
+            -OperationAssignment
 
+    -FilterPreRankerEvaluator (-> Code till here)
     -AttributeRankerFilter
     -OperatorsAssignmentsManager

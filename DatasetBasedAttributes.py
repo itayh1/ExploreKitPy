@@ -254,6 +254,36 @@ class DatasetBasedAttributes:
             else:
                 IGScoresPerNumericColumnIndex.append(score)
 
+        IGScoresPerDiscreteColumnIndex = np.array(IGScoresPerDiscreteColumnIndex)
+        IGScoresPerNumericColumnIndex = np.array(IGScoresPerNumericColumnIndex)
+        IGScoresPerColumnIndex = np.array(IGScoresPerColumnIndex)
+        self.maxIGVal = np.max(IGScoresPerColumnIndex)
+        self.minIGVal = np.min(IGScoresPerColumnIndex)
+        self.avgIGVal = np.mean(IGScoresPerColumnIndex)
+        self.stdevIGVal = np.std(IGScoresPerColumnIndex)
+
+        if IGScoresPerDiscreteColumnIndex.shape[0] > 0:
+            self.discreteAttsMaxIGVal = np.max(IGScoresPerDiscreteColumnIndex)
+            self.discreteAttsMinIGVal = np.min(IGScoresPerDiscreteColumnIndex)
+            self.discreteAttsAvgIGVal = np.mean(IGScoresPerDiscreteColumnIndex)
+            self.discreteAttsStdevIGVal = np.std(IGScoresPerDiscreteColumnIndex)
+        else:
+            self.discreteAttsMaxIGVal = 0
+            self.discreteAttsMinIGVal = 0
+            self.discreteAttsAvgIGVal = 0
+            self.discreteAttsStdevIGVal = 0
+
+        if IGScoresPerNumericColumnIndex.shape[0] > 0:
+            self.numericAttsMaxIGVal = np.max(IGScoresPerNumericColumnIndex)
+            self.numericAttsMinIGVal = np.min(IGScoresPerNumericColumnIndex)
+            self.numericAttsAvgIGVal = np.mean(IGScoresPerNumericColumnIndex)
+            self.numericAttsStdevIGVal = np.std(IGScoresPerNumericColumnIndex)
+        else:
+            self.numericAttsMaxIGVal = 0
+            self.numericAttsMinIGVal = 0
+            self.numericAttsAvgIGVal = 0
+            self.numericAttsStdevIGVal = 0
+
     # Used to calculate the dependency of the different attributes in the dataset. For the numeric attributes we conduct a paired T-Test
     # between every pair. For the discrete attributes we conduct a Chi-Square test. Finally, we discretize the numeric attributes and
     # conduct an additional Chi-Suqare test on all attributes.
@@ -265,7 +295,6 @@ class DatasetBasedAttributes:
                     tTestVal = abs(scipy.stats.ttest_ind(self.numericAttributesList[i], self.numericAttributesList[j]))
                     if not np.isnan(tTestVal) and not np.isinf(tTestVal):
                         pairedTTestValuesList.append(tTestVal)
-
 
         if len(pairedTTestValuesList) > 0:
             self.maxPairedTTestValueForNumericAttributes = max(pairedTTestValuesList)
@@ -290,8 +319,9 @@ class DatasetBasedAttributes:
                 if i != j:
                     counts = self.generateDiscreteAttributesCategoryIntersection(self.discreteAttributesList[i], self.discreteAttributesList[i])
                     # testVal = chiSquareTest.chiSquare(counts)
-                    # if not np.isnan(testVal) and not np.isinf(testVal):
-                    #     chiSquaredTestValuesList.append(testVal)
+                    testVal = scipy.stats.chi2_contingency(counts)
+                    if not np.isnan(testVal) and not np.isinf(testVal):
+                        chiSquaredTestValuesList.append(testVal)
 
         if len(chiSquaredTestValuesList) > 0:
             self.maxChiSquareValueforDiscreteAttributes = max(chiSquaredTestValuesList)
@@ -324,12 +354,10 @@ class DatasetBasedAttributes:
         for i in range(len(discretizedColumns)-1):
             for j in range(i + 1, len(discretizedColumns)):
                 if (i!=j):
-                    pass
-                    # TODO: same as above
-                    # long[][] counts = generateDiscreteAttributesCategoryIntersection((DiscreteColumn) discretizedColumns.get(i).getColumn(), (DiscreteColumn) discretizedColumns.get(j).getColumn());
-                    # double testVal = chiSquareTest.chiSquare(counts);
-                    # if (!Double.isNaN(testVal) &&  !Double.isInfinite(testVal)) {
-                    #     chiSquaredTestValuesList.add(testVal);
+                    counts = self.generateDiscreteAttributesCategoryIntersection(self.discreteAttributesList[i], self.discreteAttributesList[i])
+                    testVal = scipy.stats.chi2_contingency(counts)
+                    if not np.isnan(testVal) and not np.isinf(testVal):
+                        chiSquaredTestValuesList.append(testVal)
 
 
         if len(chiSquaredTestValuesList) > 0:
@@ -445,10 +473,10 @@ class DatasetBasedAttributes:
 
         # now we need to process the multiple values of the precision/recall analysis.
         for key in self.maxPrecisionAtFixedRecallValues.keys():
-            maxPrecisionAtt =  AttributeInfo("maxPrecisionAtFixedRecallValues_" + key, Column.columnType.Numeric, self.maxPrecisionAtFixedRecallValues[key],-1)
-            minPrecisionAtt =  AttributeInfo("minPrecisionAtFixedRecallValues_" + key, Column.columnType.Numeric, self.minPrecisionAtFixedRecallValues[key],-1)
-            avgPrecisionAtt =  AttributeInfo("avgPrecisionAtFixedRecallValues_" + key, Column.columnType.Numeric, self.avgPrecisionAtFixedRecallValues[key],-1)
-            stdevPrecisionAtt =  AttributeInfo("stdevPrecisionAtFixedRecallValues_" + key, Column.columnType.Numeric, self.stdevPrecisionAtFixedRecallValues[key],-1)
+            maxPrecisionAtt = AttributeInfo("maxPrecisionAtFixedRecallValues_" + key, Column.columnType.Numeric, self.maxPrecisionAtFixedRecallValues[key],-1)
+            minPrecisionAtt = AttributeInfo("minPrecisionAtFixedRecallValues_" + key, Column.columnType.Numeric, self.minPrecisionAtFixedRecallValues[key],-1)
+            avgPrecisionAtt = AttributeInfo("avgPrecisionAtFixedRecallValues_" + key, Column.columnType.Numeric, self.avgPrecisionAtFixedRecallValues[key],-1)
+            stdevPrecisionAtt = AttributeInfo("stdevPrecisionAtFixedRecallValues_" + key, Column.columnType.Numeric, self.stdevPrecisionAtFixedRecallValues[key],-1)
             attributes[len(attributes)] = maxPrecisionAtt
             attributes[len(attributes)] = minPrecisionAtt
             attributes[len(attributes)] = avgPrecisionAtt

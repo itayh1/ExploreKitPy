@@ -1,6 +1,11 @@
 from builtins import staticmethod
+from typing import List
 
+from ClassificationResults import ClassificationResults
 from Dataset import Dataset
+from FilterEvaluator import FilterEvaluator
+from FilterPreRankerEvaluator import FilterPreRankerEvaluator
+from InformationGainFilterEvaluator import InformationGainFilterEvaluator
 from OperatorAssignment import OperatorAssignment
 from Operators.AddBinaryOperator import AddBinaryOperator
 from Operators.CombinationGenerator import CombinationGenerator
@@ -11,8 +16,9 @@ from Properties import Properties
 
 class OperatorsAssignmentsManager:
 
-    @staticmethod
+
     # Returns a list of unary operators from the configuration file
+    @staticmethod
     def getUnaryOperatorsList():
         operatorNames = Properties.unaryOperators.split(",")
         unaryOperatorsList = []
@@ -21,8 +27,9 @@ class OperatorsAssignmentsManager:
             unaryOperatorsList.append(uo)
         return unaryOperatorsList
 
-    @staticmethod
+
     # Returns an unary operator by name
+    @staticmethod
     def getUnaryOperator(operatorName: str):
         if operatorName == "EqualRangeDiscretizerUnaryOperator":
             bins = [0] * int(Properties.equalRangeDiscretizerBinsNumber)
@@ -43,8 +50,9 @@ class OperatorsAssignmentsManager:
         else:
             raise Exception("unindentified unary operator: " + operatorName)
 
-    @staticmethod
+
     # Returns a list of nonUnary operators from the configuration file (i.e. all other operator types)
+    @staticmethod
     def getNonUnaryOperatorsList():
         operatorNames = Properties.nonUnaryOperators.split(',')
         operatorsList = []
@@ -54,8 +62,9 @@ class OperatorsAssignmentsManager:
 
         return operatorsList
 
-    @staticmethod
+
     # Returns a non-unary operator by name
+    @staticmethod
     def getNonUnaryOperator(operatorName: str):
         timeSpan = 0
         if operatorName.startswith("TimeBasedGroupByThen"):
@@ -230,3 +239,54 @@ class OperatorsAssignmentsManager:
             attributeCombinations.append(tempColumns)
 
         return attributeCombinations
+
+
+    # Activates the applyOperatorsAndPerformInitialEvaluation function, but only for Unary Operators
+    # @param dataset
+    # @param mustIncluseAttributes Attributes which must be in either the source or the target of every generated feature
+    @staticmethod
+    def applyUnaryOperators(dataset: Dataset, mustIncluseAttributes, filterEvaluator: FilterEvaluator,
+                            subFoldTrainingDatasets: List[Dataset], currentScores:List[ClassificationResults] ) -> List[OperatorAssignment]:
+        unaryOperatorsList = OperatorsAssignmentsManager.getUnaryOperatorsList()
+        return OperatorsAssignmentsManager.applyOperatorsAndPerformInitialEvaluation(dataset, unaryOperatorsList,mustIncluseAttributes, 1, filterEvaluator, null, subFoldTrainingDatasets, currentScores, false);
+
+
+     # Receives a a dataset and a list of operators, finds all possible combinations, generates and writes the attributes to file
+     # and returns the assignments list
+     # @param dataset The full dataset. The new attribute generated for it is the one to be saved to file
+     # @param operators The operators for which assignments will be generated
+     # @param mustIncluseAttributes The attributes that must be present in EITHER the source or the target. Empty lists or null mean there's no restriction
+     # @param maxNumOfSourceAttributes The maximal number of attributes that can be in the source (if the operator permits). Smaller number down to 1 (including) will also be generated
+     # @param filterEvaluator The filter evaluator that will be used to compute the initial ranking of the attriubte. The calculation is carried out on the sibfolds
+     # @param preRankerEvaluator
+     # @param subFoldTrainingDatasets The training set sub-folds. Used in order to calculate the score, as the test set cannot be used for this purpose here.
+    @staticmethod
+    def applyOperatorsAndPerformInitialEvaluation(dataset: Dataset, operators: List[Operator], mustIncluseAttributes,
+                maxNumOfSourceAttributes: int, filterEvaluator: FilterEvaluator, preRankerEvaluator: FilterPreRankerEvaluator,
+                subFoldTrainingDatasets:List[Dataset], currentScores:List[ClassificationResults], reduceNumberOfAttributes:bool) -> List[OperatorAssignment]:
+
+        # in case the number of initial attributes is very high, we need narrow the search space
+        if (reduceNumberOfAttributes and (mustIncluseAttributes == None or len(mustIncluseAttributes) == 0)):
+            # It is important to break the condition in two, because in advanced interations we always have a "must include" attribute
+            if dataset.getAllColumns(False).shape[1] > 60:
+                initialSelectionAttEvaluator = InformationGainFilterEvaluator()
+                # mustIncluseAttributes = getTopRankingDiscreteAttributesByFilterScore(dataset, initialSelectionAttEvaluator, 10)
+
+        operatorAssignments = OperatorsAssignmentsManager.getOperatorAssignments(dataset, mustIncluseAttributes, operators, maxNumOfSourceAttributes)
+        if preRankerEvaluator != None:
+            preRankedAttributesToGenerate = Properties.preRankedAttributesToGenerate
+            # operatorAssignments = getTopRankingOperatorAssignmentsWithoutGenerating( subFoldTrainingDatasets, operatorAssignments, preRankerEvaluator, preRankedAttributesToGenerate )
+
+        # Create all the new features, save them to file and evaluate them using the filter evaluator
+        # generateAttributeAndCalculateFilterEvaluatorScore(dataset, filterEvaluator, subFoldTrainingDatasets, currentScores, operatorAssignments);
+
+        # /*
+        # // The single thread version
+        # for (OperatorAssignment os: operatorAssignments) {
+        #     ColumnInfo ci = generateColumn(dataset, os, true);
+        #     //if the filter evaluator is not null, we'll conduct the initial evaluation of the new attribute
+        #     if (filterEvaluator != null) {
+        #         os.setFilterEvaluatorScore(EvaluateAttributeUsingTrainingSubFolds(subFoldTrainingDatasets, filterEvaluator, os));
+        #     }
+        # }*/
+        return operatorAssignments;
