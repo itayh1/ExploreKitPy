@@ -38,3 +38,18 @@ class OperatorAssignment:
         sb += '}'
         return sb.toString()
 
+    def getOperator(self):
+        return self.operator
+
+    def getSources(self):
+        return self.sourceColumns
+
+    def getTargets(self):
+        return self.targetColumns
+
+    def getSecondaryOperator(self):
+        return self.secondaryOperator
+
+    def setFilterEvaluatorScore(self, score: float):
+        self.filterEvaluatorScore = score
+

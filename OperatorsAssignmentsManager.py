@@ -1,21 +1,32 @@
+import time
 from builtins import staticmethod
-from typing import List
+from typing import List, Dict
 
+import Parallel
 from ClassificationResults import ClassificationResults
 from Dataset import Dataset
+from Date import Date
 from FilterEvaluator import FilterEvaluator
 from FilterPreRankerEvaluator import FilterPreRankerEvaluator
 from InformationGainFilterEvaluator import InformationGainFilterEvaluator
+from Logger import Logger
 from OperatorAssignment import OperatorAssignment
 from Operators.AddBinaryOperator import AddBinaryOperator
 from Operators.CombinationGenerator import CombinationGenerator
 from Operators.EqualRangeDiscretizerUnaryOperator import EqualRangeDiscretizerUnaryOperator
-from Operators import Operator
+from Operators.Operator import Operator, operatorType, outputType
+from PreRankerScoreRanker import PreRankerScoreRanker
 from Properties import Properties
 
+import pandas as pd
 
 class OperatorsAssignmentsManager:
 
+    # a new copy of the provided operator
+    def getOperator(operator: Operator)-> Operator:
+        if operator.getType() == operatorType.Unary:
+            return OperatorsAssignmentsManager.getUnaryOperator(operator.getName())
+        return OperatorsAssignmentsManager.getNonUnaryOperator(operator.getName())
 
     # Returns a list of unary operators from the configuration file
     @staticmethod
@@ -26,7 +37,6 @@ class OperatorsAssignmentsManager:
             uo = OperatorsAssignmentsManager.getUnaryOperator(unaryOperator)
             unaryOperatorsList.append(uo)
         return unaryOperatorsList
-
 
     # Returns an unary operator by name
     @staticmethod
@@ -123,8 +133,29 @@ class OperatorsAssignmentsManager:
         else:
             raise Exception("unindentified unary operator: " + operatorName)
 
+    # Activates the applyOperatorsAndPerformInitialEvaluation function, but only for Unary Operators
+    # @param mustIncluseAttributes Attributes which must be in either the source or the target of every generated feature
+    @staticmethod
+    def applyUnaryOperators(dataset: Dataset, mustIncluseAttributes, filterEvaluator: FilterEvaluator,
+                subFoldTrainingDatasets: List[Dataset], currentScores: List[ClassificationResults]) -> List[OperatorAssignment]:
 
-     # Receives a dataset with a set of attributes and a list of operators and generates all possible source/target/operator/secondary operator assignments
+        unaryOperatorsList = OperatorsAssignmentsManager.getUnaryOperatorsList()
+        return OperatorsAssignmentsManager.applyOperatorsAndPerformInitialEvaluation(dataset, unaryOperatorsList,
+                                                                                     mustIncluseAttributes, 1,
+                                                                                     filterEvaluator, None,
+                                                                                     subFoldTrainingDatasets,
+                                                                                     currentScores, False)
+
+    # Activates the applyOperatorsAndPerformInitialEvaluation function, for all operator types by Unary
+    # @param mustIncluseAttributes Attributes which must be in either the source or the target of every generated feature
+    @staticmethod
+    def applyNonUnaryOperators(dataset: Dataset, mustIncluseAttributes: List, preRankerEvaluator: FilterPreRankerEvaluator,
+                filterEvaluator: FilterEvaluator, subFoldTrainingDatasets:List[Dataset],  currentScores: List[ClassificationResults]) -> List[OperatorAssignment]:
+        nonUnaryOperatorsList = OperatorsAssignmentsManager.getNonUnaryOperatorsList()
+        return OperatorsAssignmentsManager.applyOperatorsAndPerformInitialEvaluation(dataset, nonUnaryOperatorsList,mustIncluseAttributes,
+                Properties.maxNumOfAttsInOperatorSource, filterEvaluator, preRankerEvaluator, subFoldTrainingDatasets, currentScores, True)
+
+    # Receives a dataset with a set of attributes and a list of operators and generates all possible source/target/operator/secondary operator assignments
      # @param dataset The dataset with the attributes that need to be analyzed
      # @param attributesToInclude A list of attributes that must be included in either the source or target of every generated assignment. If left empty, there are no restrictions
      # @param operators A list of all the operators whose assignment will be considered
@@ -132,7 +163,7 @@ class OperatorsAssignmentsManager:
     @staticmethod
     def getOperatorAssignments(dataset: Dataset, attributesToInclude: list, operators: list, maxCombinationSize: int):
         areNonUniaryOperatorsBeingUsed = False
-        if len(operators) > 0 and not operators[0].getType().equals(Operator.operatorType.Unary):
+        if len(operators) > 0 and not operators[0].getType().equals(operatorType.Unary):
             areNonUniaryOperatorsBeingUsed = True
 
         if attributesToInclude == None: attributesToInclude = []
@@ -161,7 +192,7 @@ class OperatorsAssignmentsManager:
                 # Now we check all the operators on the source attributes alone.
                 for operator in operators:
                     if operator.isApplicable(dataset, sources, []):
-                        os = OperatorAssignment(sources, None, getOperator(operator), None)
+                        os = OperatorAssignment(sources, None, OperatorsAssignmentsManager.getOperator(operator), None)
                         operatorsAssignments.append(os)
 
                     # now we pair the source attributes with a target attribute and check again
@@ -171,8 +202,24 @@ class OperatorsAssignmentsManager:
                         tempList = []
                         tempList.append(targetColumn)
                         if operator.isApplicable(dataset, sources, tempList):
-                            os = OperatorAssignment(sources, tempList, getOperator(operator), None)
+                            os = OperatorAssignment(sources, tempList, OperatorsAssignmentsManager.getOperator(operator), None)
                             operatorsAssignments.append(os)
+
+        # Finally, we go over all the operator assignments. For every assignment that is not performed on
+        # an unary operator, we check if any of the unary operators can be applied on it.
+        additionalAssignments = []
+        for os in operatorsAssignments:
+            if os.getOperator().getType() != operatorType.Unary:
+                for operator in OperatorsAssignmentsManager.getUnaryOperatorsList():
+                    if operator.getType().equals(operatorType.Unary):
+                        tempOperator = operator
+                        if tempOperator.requiredInputType().equals(os.getOperator().getOutputType()):
+                            additionalAssignment = OperatorAssignment(os.getSources(), os.getTargets(), os.getOperator(), tempOperator)
+                            additionalAssignments.append(additionalAssignment)
+
+
+        operatorsAssignments.extend(additionalAssignments)
+        return operatorsAssignments
 
     @staticmethod
     def overlapExistsBetweenSourceAndTargetAttributes(sourceAtts: list, targetAtt) -> bool:
@@ -225,8 +272,6 @@ class OperatorsAssignmentsManager:
         return overlap
 
     # Returns lists of column-combinations
-    # @param attributes
-    # @param numOfAttributesInCombination
     @staticmethod
     def getAttributeCombinations(self, attributes: list, numOfAttributesInCombination: int) -> list:
         attributeCombinations = []
@@ -241,15 +286,13 @@ class OperatorsAssignmentsManager:
         return attributeCombinations
 
 
-    # Activates the applyOperatorsAndPerformInitialEvaluation function, but only for Unary Operators
-    # @param dataset
-    # @param mustIncluseAttributes Attributes which must be in either the source or the target of every generated feature
+     # Receives a dataset and a list of OperatorAssignment objects, generates/gets them from file and
+     # adds them to the dataset
     @staticmethod
-    def applyUnaryOperators(dataset: Dataset, mustIncluseAttributes, filterEvaluator: FilterEvaluator,
-                            subFoldTrainingDatasets: List[Dataset], currentScores:List[ClassificationResults] ) -> List[OperatorAssignment]:
-        unaryOperatorsList = OperatorsAssignmentsManager.getUnaryOperatorsList()
-        return OperatorsAssignmentsManager.applyOperatorsAndPerformInitialEvaluation(dataset, unaryOperatorsList,mustIncluseAttributes, 1, filterEvaluator, null, subFoldTrainingDatasets, currentScores, false);
-
+    def GenerateAndAddColumnToDataset(self, dataset:Dataset, oaList:List[OperatorAssignment]):
+        for oa in oaList:
+            ci = OperatorsAssignmentsManager.generateColumn(dataset, oa, True)
+            dataset.addColumn(ci)
 
      # Receives a a dataset and a list of operators, finds all possible combinations, generates and writes the attributes to file
      # and returns the assignments list
@@ -258,7 +301,6 @@ class OperatorsAssignmentsManager:
      # @param mustIncluseAttributes The attributes that must be present in EITHER the source or the target. Empty lists or null mean there's no restriction
      # @param maxNumOfSourceAttributes The maximal number of attributes that can be in the source (if the operator permits). Smaller number down to 1 (including) will also be generated
      # @param filterEvaluator The filter evaluator that will be used to compute the initial ranking of the attriubte. The calculation is carried out on the sibfolds
-     # @param preRankerEvaluator
      # @param subFoldTrainingDatasets The training set sub-folds. Used in order to calculate the score, as the test set cannot be used for this purpose here.
     @staticmethod
     def applyOperatorsAndPerformInitialEvaluation(dataset: Dataset, operators: List[Operator], mustIncluseAttributes,
@@ -270,15 +312,15 @@ class OperatorsAssignmentsManager:
             # It is important to break the condition in two, because in advanced interations we always have a "must include" attribute
             if dataset.getAllColumns(False).shape[1] > 60:
                 initialSelectionAttEvaluator = InformationGainFilterEvaluator()
-                # mustIncluseAttributes = getTopRankingDiscreteAttributesByFilterScore(dataset, initialSelectionAttEvaluator, 10)
+                mustIncluseAttributes = OperatorsAssignmentsManager.getTopRankingDiscreteAttributesByFilterScore(dataset, initialSelectionAttEvaluator, 10)
 
         operatorAssignments = OperatorsAssignmentsManager.getOperatorAssignments(dataset, mustIncluseAttributes, operators, maxNumOfSourceAttributes)
         if preRankerEvaluator != None:
             preRankedAttributesToGenerate = Properties.preRankedAttributesToGenerate
-            # operatorAssignments = getTopRankingOperatorAssignmentsWithoutGenerating( subFoldTrainingDatasets, operatorAssignments, preRankerEvaluator, preRankedAttributesToGenerate )
+            operatorAssignments = OperatorsAssignmentsManager.getTopRankingOperatorAssignmentsWithoutGenerating( subFoldTrainingDatasets, operatorAssignments, preRankerEvaluator, preRankedAttributesToGenerate )
 
         # Create all the new features, save them to file and evaluate them using the filter evaluator
-        # generateAttributeAndCalculateFilterEvaluatorScore(dataset, filterEvaluator, subFoldTrainingDatasets, currentScores, operatorAssignments);
+        OperatorsAssignmentsManager.generateAttributeAndCalculateFilterEvaluatorScore(dataset, filterEvaluator, subFoldTrainingDatasets, currentScores, operatorAssignments)
 
         # /*
         # // The single thread version
@@ -289,4 +331,232 @@ class OperatorsAssignmentsManager:
         #         os.setFilterEvaluatorScore(EvaluateAttributeUsingTrainingSubFolds(subFoldTrainingDatasets, filterEvaluator, os));
         #     }
         # }*/
-        return operatorAssignments;
+        return operatorAssignments
+
+     # Ranks all current DISCRETE columns in the dataset using a filter evaluator and returns the top X ranking columns (ties are broken randomly)
+    @staticmethod
+    def getTopRankingDiscreteAttributesByFilterScore(dataset: Dataset, filterEvaluator: FilterEvaluator, numOfAttributesToReturn: int) -> list:
+        IGScoresPerColumnIndex: Dict[float, list] = {}
+        for colName in dataset.getAllColumns(False).columns:
+            ci = dataset.df[colName]
+            if dataset.targetClass == ci.name:
+                continue
+
+            # if the attribute is string or date, not much we can do about that
+            if not pd.api.types.is_integer_dtype(ci):
+                continue
+
+            indicedList = []
+            indicedList.append(colName)
+            replicatedDataset = dataset.emptyReplica()
+
+            columnsToAnalyze = []
+            columnsToAnalyze.append(colName)
+            filterEvaluator.initFilterEvaluator(ci)
+            score = filterEvaluator.produceScore(replicatedDataset, None, dataset, None, ci)
+            if score not in IGScoresPerColumnIndex:
+                IGScoresPerColumnIndex[score] = []
+            IGScoresPerColumnIndex[score].append(colName)
+
+        columnsToReturn = []
+
+        for score, cols in IGScoresPerColumnIndex.items():
+            for col in cols:
+                columnsToReturn.append(col)
+                if len(columnsToReturn) >= numOfAttributesToReturn:
+                    return columnsToReturn
+        return columnsToReturn
+
+    @staticmethod
+    def getTopRankingOperatorAssignmentsWithoutGenerating( subFoldTrainingDatasets: List[Dataset], operatorAssignments:List[OperatorAssignment],
+                             preRankerEvaluator: FilterPreRankerEvaluator, numOfOperatorAssignmentsToGet:int)->OperatorAssignment:
+        replicatedSubFoldsList = []
+        for subFoldDataset in subFoldTrainingDatasets:
+            replicatedSubFoldsList.append(subFoldDataset.replicateDataset())
+
+        numOfThread = Properties.numOfThreads
+
+        def produceScoreOfOperationAssigment(oa):
+            try:
+                finalScore = 0.0
+                for dataset in replicatedSubFoldsList:
+                    datasetEmptyReplica = dataset.emptyReplica()
+                    try:
+                        finalScore += preRankerEvaluator.produceScore(datasetEmptyReplica, None, dataset, oa, None)
+                    except:
+                        finalScore += preRankerEvaluator.produceScore(datasetEmptyReplica, None, dataset, oa, None)
+
+                finalScore = (finalScore / len(replicatedSubFoldsList))
+                oa.setPreRankerEvaluatorScore(finalScore)
+            except Exception as ex:
+                Logger.Error("getTopRankingOperatorAssignmentsWithoutGenerating -> error while evaluating attribute: " + oa.getName(),
+                             ex)
+
+        if numOfThread > 1:
+            Parallel.ParallelForEach(produceScoreOfOperationAssigment, [[oa] for oa in operatorAssignments])
+        else:
+            for oa in operatorAssignments:
+                produceScoreOfOperationAssigment(oa)
+
+        ranker = PreRankerScoreRanker()
+        oaListRanked = ranker.rankAndFilter(operatorAssignments, None, None, None)
+        if numOfOperatorAssignmentsToGet < len(oaListRanked):
+            oaListRanked =oaListRanked[: numOfOperatorAssignmentsToGet]
+        return oaListRanked
+
+    @staticmethod
+    def generateAttributeAndCalculateFilterEvaluatorScore(dataset: Dataset, filterEvaluator: FilterEvaluator,
+                 subFoldTrainingDatasets: List[Dataset] , currentScores:  List[ClassificationResults],
+                  operatorAssignments: List[OperatorAssignment]):
+        # //System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism", "1");
+        Logger.Info("generateAttributeAndCalculateFilterEvaluatorScore -> num of attributes to evaluate: " + str(len(operatorAssignments)))
+        counter = 0
+        numOfThread = Properties.numOfThreads
+        def evaluateScore(oa):
+            try:
+                # attributeGenerationLock.lock();
+                replicatedDataset = dataset.replicateDataset()
+                # counter += 1
+                # if (counter % 1000) == 0:
+                #     date = Date()
+                #     Logger.Info("generateAttributeAndCalculateFilterEvaluatorScore -> analyzed " + counter + " attributes : " + date.toString())
+
+                # // attributeGenerationLock.unlock();
+
+                ci = OperatorsAssignmentsManager.generateColumn(replicatedDataset, oa, True)
+                 # if the filter evaluator is not null, we'll conduct the initial evaluation of the new attribute
+                if (ci != None) and (filterEvaluator != None):
+                 # filterEvaluationLock.lock();
+                    cloneEvaluator = filterEvaluator.getCopy()
+                    replicatedSubFoldsList = []
+                    for subFoldDataset in subFoldTrainingDatasets:
+                        replicatedSubFoldsList.append(subFoldDataset.replicateDataset())
+
+                    # filterEvaluationLock.unlock();
+                    filterEvaluatorScore = OperatorsAssignmentsManager.EvaluateAttributeUsingTrainingSubFolds(
+                        replicatedSubFoldsList, cloneEvaluator, oa, currentScores)
+                    # oa.setFilterEvaluatorScore(filterEvaluatorScore)
+                return filterEvaluatorScore
+
+            except Exception as ex:
+                Logger.Error(
+                        "generateAttributeAndCalculateFilterEvaluatorScore -> error when generating and evaluating attribute: " + oa.getName(), ex)
+                return None
+
+        if (numOfThread > 1):
+            filterEvaluatorScores = Parallel.ParallelForEach(evaluateScore, [[oa] for oa in operatorAssignments])
+            for i, oa in enumerate(operatorAssignments):
+                oa.setFilterEvaluatorScore(filterEvaluatorScores[i])
+
+        else:
+            for oa in operatorAssignments:
+                oa.setFilterEvaluatorScore(evaluateScore(oa))
+
+    # Creates the new attribute. Also writes it to a file.
+    # @param finalAttribute indicates if this is the version that is generated from the COMPLETE training set.
+    # This is the only version that needs to be written or read from the file system
+    @staticmethod
+    def generateColumn(dataset: Dataset, os:  OperatorAssignment, finalAttribute: bool):
+        writeToFile = False
+        try:
+            ci = None
+            # No writing to files
+            # if finalAttribute and writeToFile:
+            #     ci = OperatorsAssignmentsManager.readColumnInfoFromFile(dataset.name, os.getName())
+            if ci == None:
+                operator = None
+                try:
+                    operator = OperatorsAssignmentsManager.getOperator(os.getOperator())
+
+                except Exception as ex:
+                    Logger.Info("Sleeping, try again")
+                    time.sleep(0.1)
+                    operator = OperatorsAssignmentsManager.getOperator(os.getOperator())
+
+                operator.processTrainingSet(dataset, os.getSources(), os.getTargets())
+
+                try:
+                    ci = operator.generate(dataset, os.getSources(), os.getTargets(), True)
+
+                except:
+                    x=5
+
+                if ci != None and os != None and os.getSecondaryOperator() != None:
+                    replica = dataset.emptyReplica()
+                    replica.addColumn(ci)
+                    uOperator = os.getSecondaryOperator()
+                    tempList = []
+                    tempList.append(ci)
+                    try:
+                        uOperator.processTrainingSet(replica, tempList, None)
+                        ci2 = uOperator.generate(replica, tempList, None, True)
+                        ci = ci2
+
+                    except:
+                        pass
+
+                if finalAttribute and writeToFile:
+                    # write the column to file, so we don't have to calculate it again
+                    OperatorsAssignmentsManager.writeColumnInfoToFile(dataset.name, os.getName(), ci)
+
+            return ci
+
+        except Exception as ex:
+            operator = OperatorsAssignmentsManager.getOperator(os.getOperator())
+            operator.processTrainingSet(dataset, os.getSources(), os.getTargets())
+            Logger.Error("Error while generating column: " + ex, ex)
+            raise Exception("Failure to generate column")
+
+    # Evaluates a set of datasets using a leave-one-out evaluation
+    @staticmethod
+    def EvaluateAttributeUsingTrainingSubFolds(datasets: List[Dataset], filterEvaluator:  FilterEvaluator,
+                            operatorAssignment:OperatorAssignment, currentScores: List[ClassificationResults] ) -> float:
+        finalScore = 0
+
+        for i, dataset in enumerate(datasets):
+            currentScore = None
+            if currentScores != None:
+                currentScore = currentScores[i]
+
+            ci = OperatorsAssignmentsManager.generateColumn(dataset, operatorAssignment, False)
+            if ci == None:
+                return float('-inf')
+
+            tempList = []
+            tempList.append(ci)
+            filterEvaluator.initFilterEvaluator(tempList)
+            datasetEmptyReplica = dataset.emptyReplica()
+
+            try:
+                finalScore += filterEvaluator.produceScore(datasetEmptyReplica, currentScore, dataset, operatorAssignment, ci)
+            except:
+                finalScore += filterEvaluator.produceScore(datasetEmptyReplica, currentScore, dataset, operatorAssignment, ci)
+
+        return finalScore / len(datasets)
+
+    # Read column from a file
+    def readColumnInfoFromFile(self, datasetName: str, operatorAssignmentName: str):
+        # fileName = getHashedName(datasetName + operatorAssignmentName) + ".ser";
+        # String filePath = properties.get("operatorAssignmentFilesLocation") + fileName;
+        #
+        # File file = new File(filePath);
+        # if (!file.exists()) {
+        #     return null;
+        # }
+        # FileInputStream streamIn = new FileInputStream(filePath);
+        # ObjectInputStream objectinputstream = new ObjectInputStream(streamIn);
+        # try {
+        #     return (ColumnInfo) objectinputstream.readObject();
+        # }
+        # catch (Exception ex) {
+        #     LOGGER.error("Error reading ColumnInfo from file " + ex.getMessage());
+        # }
+        return None
+
+    # Writes a ColumnInfo object to file
+    def writeColumnInfoToFile(datasetName: str, operatorAssignmentName: str,  ci):
+        # String fileName = getHashedName(datasetName + operatorAssignmentName) + ".ser";
+        # FileOutputStream fout = new FileOutputStream(properties.getProperty("operatorAssignmentFilesLocation") + fileName, true);
+        # ObjectOutputStream oos = new ObjectOutputStream(fout);
+        # oos.writeObject(ci);
+        pass

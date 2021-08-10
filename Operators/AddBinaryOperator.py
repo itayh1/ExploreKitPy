@@ -1,8 +1,9 @@
 from Dataset import Dataset
-from Operators.Operator import Operator, outputType, operatorType
+from Operators.BinaryOperator import BinaryOperator
+from Operators.Operator import outputType, operatorType
 
 
-class AddBinaryOperator(Operator):
+class AddBinaryOperator(BinaryOperator):
 
     def generate(self, dataset: Dataset, sourceColumns, targetColumns):
         return sourceColumns + targetColumns

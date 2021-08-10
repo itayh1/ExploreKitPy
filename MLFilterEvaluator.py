@@ -1,19 +1,20 @@
 
 
 from DatasetBasedAttributes import DatasetBasedAttributes
+from FilterEvaluator import FilterEvaluator
 from MLAttributeManager import MLAttributeManager
 from Dataset import Dataset
 from Logger import Logger
 from Properties import Properties
 
 
-class MLFilterEvaluator:
+class MLFilterEvaluator(FilterEvaluator):
 
     analyzedColumns = []
     datasetAttributes = {}
 
     def __init__(self, dataset: Dataset):
-
+        super().__init__()
         self.initializeBackgroundModel(dataset)
 
     # Used to create or load the data used by the background model - all the datasets that are evaluated "offline" to create

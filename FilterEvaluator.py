@@ -1,6 +1,8 @@
 import pandas as pd
 
+from ClassificationResults import ClassificationResults
 from Dataset import Dataset
+from OperatorAssignment import OperatorAssignment
 from Operators.EqualRangeDiscretizerUnaryOperator import EqualRangeDiscretizerUnaryOperator
 
 class FilterEvaluator:
@@ -29,3 +31,9 @@ class FilterEvaluator:
         #         analyzedColumns.set(i, discretizer.generate(dataset, columns, null, false));
         #     }
         pass
+
+
+    def produceScore(self, analyzedDatasets: Dataset, currentScore: ClassificationResults, completeDataset: Dataset,
+                 oa: OperatorAssignment, candidateAttribute):
+        raise NotImplementedError('FilterEvaluator is abstract, must be overrided')
+

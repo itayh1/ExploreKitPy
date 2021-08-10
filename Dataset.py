@@ -120,6 +120,14 @@ class Dataset:
     def getDistinctValueCompliantColumns(self):
         pass
 
+    # Creates a replica of the given Dataset object, but without any columns except for the target column and the
+    # distinct value columns (if they exist)
+    def emptyReplica(self):
+        emptyDataset = self.df.copy(deep=True)
+        emptyDataset = emptyDataset[self.targetClass]
+        return Dataset(emptyDataset, [], self.targetClass, self.name,
+                       self.randomSeed, self.maxNumOfDiscreteValuesForInstancesObject)
+
     # add column to the dataset
     def addColumn(self, column):
         self.df[column.name] = column

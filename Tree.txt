@@ -17,6 +17,6 @@ Main
             -CombinationGenerator
             -OperationAssignment
 
-    -FilterPreRankerEvaluator (-> Code till here)
+    -FilterPreRankerEvaluator
+    -OperatorsAssignmentsManager (-> Code till here)
     -AttributeRankerFilter
-    -OperatorsAssignmentsManager

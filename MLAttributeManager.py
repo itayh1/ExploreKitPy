@@ -1,5 +1,9 @@
 import errno
 import os.path
+from typing import Dict
+
+import numpy as np
+
 import FileUtils
 
 from ArffSaver import ArffSaver
@@ -605,4 +609,80 @@ class MLAttributeManager:
         fileWriter.flush()
         fileWriter.close()
 
+    # An overload, used to apply the generateValuesMatrix function for a single sample
+    def generateValuesMatrix(self, datasetAttributeValues:Dict[int,AttributeInfo] ) -> pd.DataFrame:
+        # List<TreeMap<Integer,AttributeInfo>> tempList = new ArrayList<>();
+        # tempList.add(datasetAttributeValues);
+        return self.generateValuesMatrix([datasetAttributeValues], 0)
 
+    # Creates a data matrix from a HashMap of AttributeInfo objects.
+    def generateValuesMatrix(self, datasetAttributeValues, startIndex: int):
+        # attributes = self.generateAttributes(datasetAttributeValues[0] , startIndex)
+
+        attributesMatrix = []
+        for attValues in datasetAttributeValues:
+            attributesMatrix.append(attValues.values())
+        df = pd.DataFrame(np.asarray(attributesMatrix), columns=datasetAttributeValues[0].keys())
+        return df
+        # Instances finalSet = new Instances("trainingSet", attributes, 0);
+        # for (TreeMap<Integer,AttributeInfo> attValues : datasetAttributeValues) {
+        #     double[] row = new double[datasetAttributeValues.get(0).size()];
+        #     for (int key : attValues.keySet()) {
+        #         AttributeInfo att = attValues.get(key);
+        #         if (att.getAttributeType() == Column.columnType.Numeric) {
+        #             try {
+        #                 Object ob = attValues.get(key).getValue();
+        #                 if(ob instanceof Integer) {
+        #                     row[key] = ((Integer) attValues.get(key).getValue());
+        #                 }
+        #                 else {
+        #                     row[key] = ((Double) attValues.get(key).getValue());
+        #                 }
+        #             }
+        #             catch (Exception ex) {
+        #                 LOGGER.error("Exception: " + ex.getMessage());
+        #             }
+        #         }
+        #         else {
+        #             row[key] = (Integer) attValues.get(key).getValue();
+        #         }
+        #     }
+        #     DenseInstance di = new DenseInstance(1.0, row);
+        #     finalSet.add(di);
+        # }
+        # return finalSet;
+
+    # Generates a list of Attribute objects. The types of the Attributes are in the same order as the types we
+    # want to add the to Instances object.
+    def generateAttributes(self, attributesData, startIndex: int):
+        # ArrayList<Attribute> listToReturn = new ArrayList<>();
+        # for (int i=0; i<attributesData.size(); i++) {
+        #     AttributeInfo tmpAtt = attributesData.get(i);
+        #     Attribute att = null;
+        #     switch(tmpAtt.getAttributeType())
+        #     {
+        #         case Numeric:
+        #             att = new Attribute(Integer.toString(startIndex+i),startIndex+ i);
+        #             break;
+        #         case Discrete:
+        #             List<String> values = new ArrayList<>();
+        #             int numOfDiscreteValues = tmpAtt.getNumOfDiscreteValues();
+        #             for (int j=0; j<numOfDiscreteValues; j++) { values.add(Integer.toString(j)); }
+        #             att = new Attribute(Integer.toString(startIndex+i), values, startIndex + i);
+        #             break;
+        #         case String:
+        #             //Most classifiers can't handle Strings. Currently we don't include them in the dataset
+        #             break;
+        #         case Date:
+        #             //Currently we don't include them in the dataset. We don't have a way of handling "raw" dates
+        #             break;
+        #         default:
+        #             throw new Exception("unsupported column type");
+        #     }
+        #     if (att != null) {
+        #         listToReturn.add(att);
+        #     }
+        # }
+        pass
+
+        # return listToReturn;

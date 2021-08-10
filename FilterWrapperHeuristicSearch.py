@@ -2,8 +2,11 @@
 from datetime import datetime
 
 from AucWrapperEvaluator import AucWrapperEvaluator
+from ClassificationResults import ClassificationResults
 from Date import Date
+from FilterEvaluator import FilterEvaluator
 from FilterPreRankerEvaluator import FilterPreRankerEvaluator
+from OperatorAssignment import OperatorAssignment
 from OperatorsAssignmentsManager import OperatorsAssignmentsManager
 from Properties import Properties
 from MLFilterEvaluator import MLFilterEvaluator
@@ -64,23 +67,41 @@ class FilterWrapperHeuristicSearch:
         # used to generate attributes in the iterative search phase
         Logger.Info(f"Starting to apply unary operators: {date}")
         oam = OperatorsAssignmentsManager()
-        candidateAttributes = oam.applyUnaryOperators(dataset,null, filterEvaluator, subFoldTrainingDatasets, currentClassificationProbs)
-        # date = new Date();
-        # Logger.Info("  .....done " + date.toString());
-        #
-        # //Now we add the new attributes to the dataset (they are added even though they may not be included in the
-        # //final dataset beacuse they are essential to the full generation of additional features
-        # Logger.Info("Starting to generate and add columns to dataset:   "  + " : " + date.toString());
-        # oam.GenerateAndAddColumnToDataset(dataset, candidateAttributes);
-        # date = new Date();
-        # Logger.Info("  .....done " + date.toString());
-        #
-        # //The initial dataset has been populated with the discretized/normalized features. Time to begin the search
-        # int iterationsCounter = 1;
-        # List<ColumnInfo> columnsAddedInthePreviousIteration = null;
-        #
-        # performIterativeSearch(originalDataset, runInfo,preRankerEvaluator, filterEvaluator, wrapperEvaluator, dataset, originalDatasetTrainingFolds, subFoldTrainingDatasets, currentClassificationProbs, oam, candidateAttributes, iterationsCounter, columnsAddedInthePreviousIteration);
+        candidateAttributes = oam.applyUnaryOperators(dataset, None, filterEvaluator, subFoldTrainingDatasets, currentClassificationProbs)
+        date = Date();
+        Logger.Info("  .....done " + str(date))
 
-    @staticmethod
-    def getWrapper(param):
+        # Now we add the new attributes to the dataset (they are added even though they may not be included in the
+        # final dataset beacuse they are essential to the full generation of additional features
+        Logger.Info("Starting to generate and add columns to dataset: " + str(date))
+        oam.GenerateAndAddColumnToDataset(dataset, candidateAttributes)
+        date = Date()
+        Logger.Info("  .....done " + str(date))
+
+        # The initial dataset has been populated with the discretized/normalized features. Time to begin the search
+        iterationsCounter = 1
+        columnsAddedInthePreviousIteration = None
+
+        self.performIterativeSearch(originalDataset, runInfo,preRankerEvaluator, filterEvaluator, wrapperEvaluator, dataset, originalDatasetTrainingFolds, subFoldTrainingDatasets, currentClassificationProbs, oam, candidateAttributes, iterationsCounter, columnsAddedInthePreviousIteration);
+
+    '''
+    Performs the iterative search - the selection of the candidate features and the generation of the additional candidates that are added to the pool
+    in the next round.
+    @param originalDataset The dataset with the original attributes set
+    @param runInfo
+    @param preRankerEvaluator
+    @param filterEvaluator The type of FilterEvaluator chosen for the expriments
+    @param wrapperEvaluator The type of wrapper evaluator chosen for the experiments
+    @param dataset The dataset with the "augmented" attributes set (to this object we add the selected attributes)
+    @param originalDatasetTrainingFolds The training folds and the test fold (the original partitioning of the data)
+    @param subFoldTrainingDatasets Only the training folds (a subset of the previous parameter)
+    @param currentClassificationProbs The probabilities assigned to each instance by the classifier of belonging to each of the classes
+    @param oam Manages the applying of the various operators on the attributes
+    @param candidateAttributes The attributes that are being ocnsidered for adding to the dataset
+    @param iterationsCounter
+    @param columnsAddedInthePreviousIteration The attriubtes that were already added to the dataset
+    '''
+    def performIterativeSearch(self, originalDataset: Dataset, runInfo: str,  preRankerEvaluator:FilterPreRankerEvaluator, filterEvaluator:  FilterEvaluator,  wrapperEvaluator:WrapperEvaluator,
+                             dataset: Dataset, originalDatasetTrainingFolds: List[Dataset], subFoldTrainingDatasets: List[Dataset], currentClassificationProbs:List[ClassificationResults],
+                             oam: OperatorsAssignmentsManager, candidateAttributes: List[OperatorAssignment], iterationsCounter:  int, columnsAddedInthePreviousIteration: List<ColumnInfo>):
         pass
