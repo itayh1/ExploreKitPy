@@ -104,4 +104,4 @@ class FilterWrapperHeuristicSearch:
     def performIterativeSearch(self, originalDataset: Dataset, runInfo: str,  preRankerEvaluator:FilterPreRankerEvaluator, filterEvaluator:  FilterEvaluator,  wrapperEvaluator:WrapperEvaluator,
                              dataset: Dataset, originalDatasetTrainingFolds: List[Dataset], subFoldTrainingDatasets: List[Dataset], currentClassificationProbs:List[ClassificationResults],
                              oam: OperatorsAssignmentsManager, candidateAttributes: List[OperatorAssignment], iterationsCounter:  int, columnsAddedInthePreviousIteration: List<ColumnInfo>):
-        pass
+
