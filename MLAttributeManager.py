@@ -2,14 +2,12 @@ import errno
 import os.path
 from typing import Dict
 
-import numpy as np
-
 import FileUtils
 
 from ArffSaver import ArffSaver
 from AttributeInfo import AttributeInfo
 from Classifier import Classifier
-from Column import Column
+# from Column import Column
 from Dataset import Dataset
 from DatasetBasedAttributes import DatasetBasedAttributes
 from Date import Date
@@ -18,6 +16,7 @@ from EvaluationInfo import EvaluationInfo
 from FileUtils import listFilesInDir
 from Loader import Loader
 from Logger import Logger
+from Operators import Operator
 from OperatorAssignmentBasedAttributes import OperatorAssignmentBasedAttributes
 from OperatorsAssignmentsManager import OperatorsAssignmentsManager
 from Properties import Properties
@@ -26,7 +25,7 @@ from Serializer import Serializer
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import roc_auc_score
 import pandas as pd
-
+import numpy as np
 
 
 class MLAttributeManager:
@@ -292,7 +291,7 @@ class MLAttributeManager:
             nonUnaryOperatorAssignments = OperatorsAssignmentsManager.getOperatorAssignments(replicatedDataset, None, nonUnaryOperators, int(Properties.maxNumOfAttsInOperatorSource))
 
             # 3) Generate the candidate attribute and generate its attributes
-            nonUnaryOperatorAssignments.addAll(unaryOperatorAssignments);
+            nonUnaryOperatorAssignments.extend(unaryOperatorAssignments)
 
             # oaList.parallelStream().forEach(oa -> {
             # ReentrantLock wrapperResultsLock = new ReentrantLock();
@@ -327,14 +326,13 @@ class MLAttributeManager:
                     #     candidateAttributesList.get(classifier).get(oa).put(DATASET_BASED, datasetAttributes);
                     candidateAttributesList[classifier][oa][MLAttributeManager.DATASET_BASED] =  datasetAttributes
                     # Add the identifier of the classifier that was used
-                    classifierAttribute = AttributeInfo("Classifier", Column.columnType.Discrete, self.getClassifierIndex(classifier), 3)
-                    candidateAttributeValuesFreeMetaFeatures[candidateAttributeValuesFreeMetaFeatures.size()] = classifierAttribute
+                    classifierAttribute = AttributeInfo("Classifier", Operator.outputType.Discrete, self.getClassifierIndex(self.classifier), 3)
+                    candidateAttributeValuesFreeMetaFeatures[len(candidateAttributeValuesFreeMetaFeatures)] = classifierAttribute
                     candidateAttributesList[classifier][oa][MLAttributeManager.OA_BASED] = candidateAttributeValuesFreeMetaFeatures
 
                     candidateAttributeValuesDependentMetaFeatures = oaba.getGeneratedAttributeValuesMetaFeatures(dataset, oa, candidateAttribute)
                     candidateAttributesList[classifier][oa][MLAttributeManager.VALUES_BASED] = candidateAttributeValuesDependentMetaFeatures
                     candidateAttributesList[classifier][oa][MLAttributeManager.OA_BASED][candidateAttributesList[classifier][oa][MLAttributeManager.OA_BASED].size()] = self.createClassAttribute(originalAuc, datasetReplica, evaluationResults1)
-
 
                     # wrapperResultsLock.lock(); #TODO: part of the pararell stream
                     if (len(candidateAttributesList[classifier]) % 1000) == 0:
@@ -420,7 +418,7 @@ class MLAttributeManager:
                     #     candidateAttributesList.get(classifier).get(oa).put(DATASET_BASED, datasetAttributes);
                     candidateAttributesList[classifier][oa][MLAttributeManager.DATASET_BASED] =  datasetAttributes
                     # Add the identifier of the classifier that was used
-                    classifierAttribute = AttributeInfo("Classifier", Column.columnType.Discrete, self.getClassifierIndex(classifier), 3)
+                    classifierAttribute = AttributeInfo("Classifier", Operator.outputType.Discrete, self.getClassifierIndex(classifier), 3)
                     candidateAttributeValuesFreeMetaFeatures[candidateAttributeValuesFreeMetaFeatures.size()] = classifierAttribute
                     candidateAttributesList[classifier][oa][MLAttributeManager.OA_BASED] = candidateAttributeValuesFreeMetaFeatures
 
@@ -458,10 +456,10 @@ class MLAttributeManager:
         auc = self.CalculateAUC(evaluationResults1, datasetReplica)
         deltaAuc = auc - originalAuc;
         if deltaAuc > 0.01:
-            classAttribute =  AttributeInfo("classAttribute", Column.columnType.Discrete, 1, 2)
+            classAttribute =  AttributeInfo("classAttribute", Operator.outputType.Discrete, 1, 2)
             Logger.Info("found positive match with delta " + deltaAuc)
         else:
-            classAttribute = AttributeInfo("classAttribute", Column.columnType.Discrete, 0, 2)
+            classAttribute = AttributeInfo("classAttribute", Operator.outputType.Discrete, 0, 2)
         return classAttribute
 
 

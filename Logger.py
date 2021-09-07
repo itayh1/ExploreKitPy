@@ -13,7 +13,7 @@ class Logger:
         print(msg)
 
     @staticmethod
-    def Error(msg: str, ex=None):
+    def Error(msg: str, ex: Exception =None):
         print(msg)
         exc_type, exc_obj, exc_tb = sys.exc_info()
         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
@@ -21,4 +21,4 @@ class Logger:
 
     @staticmethod
     def Warn(msg: str):
-        print(msg)
+        print(f'WARN: {msg}')

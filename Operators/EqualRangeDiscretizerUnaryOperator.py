@@ -1,3 +1,4 @@
+from typing import List
 
 import numpy as np
 import pandas as pd
@@ -14,12 +15,13 @@ class EqualRangeDiscretizerUnaryOperator(UnaryOperator):
         self.upperBoundPerBin = np.array(upperBoundPerBin)
         Operator.__init__(self)
 
-    def processTrainingSet(self, dataset: Dataset, sourceColumns: pd.Series, targetColumns):
+    def processTrainingSet(self, dataset: Dataset, sourceColumns: List[pd.Series], targetColumns):
         trainIndices = dataset.getIndicesOfTrainingInstances()
-        if len(sourceColumns.shape) != 1: #Not Series
-            values = sourceColumns.loc[trainIndices].iloc[:, 0]
-        else:
-            values = sourceColumns.loc[trainIndices]
+        # if len(sourceColumns.shape) != 1: #Not Series
+        #     values = sourceColumns.loc[trainIndices].iloc[:, 0]
+        # else:
+        #     values = sourceColumns.loc[trainIndices]
+        values = sourceColumns[0].values
         minVal = np.nanmin(values)
         maxVal = np.nanmax(values)
         self.upperBoundPerBin = np.linspace(minVal, maxVal, self.upperBoundPerBin.shape[0])
@@ -46,12 +48,13 @@ class EqualRangeDiscretizerUnaryOperator(UnaryOperator):
     #         self.upperBoundPerBin[i] = currentVal + rng
     #         currentVal += rng
 
-    def generate(self, dataset: Dataset, sourceColumns: pd.Series, targetColumns: list) -> pd.Series:
+    def generate(self, dataset: Dataset, sourceColumns: List[pd.Series], targetColumns: list) -> pd.Series:
         try:
-            values = sourceColumns.values
-            discretized = values[np.digitize(values, self.upperBoundPerBin) - 1]
-            name='EqualRangeDiscretizer('+str(sourceColumns.name)+')'
-            return pd.Series(data=discretized, name=name, index=sourceColumns.index, dtype='int')
+            sourceColumn = sourceColumns[0]
+            values = sourceColumn.values
+            discretized = np.digitize(values, self.upperBoundPerBin) - 1
+            name='EqualRangeDiscretizer('+str(sourceColumn.name)+')'
+            return pd.Series(data=discretized, name=name, index=sourceColumn.index, dtype='int')
         except Exception as ex:
             Logger.Error('error in EqualRangeDiscretizer: '+str(ex))
             return None
@@ -95,6 +98,10 @@ class EqualRangeDiscretizerUnaryOperator(UnaryOperator):
         return 'EqualRangeDiscretizerUnaryOperator'
 
     def requiredInputType(self):
-        pass
+        return outputType.Numeric
 
+    def isApplicable(self, dataset: Dataset, sourceColumns: List[pd.Series], targetColumns: List[pd.Series]) -> bool:
+        if super().isApplicable(dataset, sourceColumns, targetColumns):
+            return Operator.getSeriesType(sourceColumns[0]) == outputType.Numeric
+        return False
 

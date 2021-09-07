@@ -9,8 +9,8 @@ Main
             -AucWrapperEvaluator
             -IGScores
             -InformationGainFilterEvaluator
-            -EqualRangeDiscretizerUnaryOperator (-> Run till here)
-            -ChiSquareTest/TTest
+            -EqualRangeDiscretizerUnaryOperator
+            -ChiSquareTest/TTest (-> Run till here)
         -OperatorsAssignmentsManager
             -UnaryOperator (e.g. Discretizer)
             -BinaryOperator (e.g. Add)
@@ -18,5 +18,5 @@ Main
             -OperationAssignment
 
     -FilterPreRankerEvaluator
-    -OperatorsAssignmentsManager (-> Code till here)
-    -AttributeRankerFilter
+    -OperatorsAssignmentsManager
+    -AttributeRankerFilter (-> Code till here)

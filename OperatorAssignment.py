@@ -13,8 +13,8 @@ class OperatorAssignment:
         self.secondaryOperator = secondaryOperator
 
         self.filterEvaluatorScore: float = 0
-        self.wrapperEvaluatorScore: float
-        self.preRankerEvaluatorScore: float
+        self.wrapperEvaluatorScore: float = 0
+        self.preRankerEvaluatorScore: float = 0
 
     def getName(self) -> str:
         sb = ''
@@ -50,6 +50,24 @@ class OperatorAssignment:
     def getSecondaryOperator(self):
         return self.secondaryOperator
 
+    def getFilterEvaluatorScore(self):
+        return self.filterEvaluatorScore
+
     def setFilterEvaluatorScore(self, score: float):
         self.filterEvaluatorScore = score
+
+    def getWrapperEvaluatorScore(self):
+        return self.wrapperEvaluatorScore
+
+    def setWrapperEvaluatorScore(self, score: float):
+        self.wrapperEvaluatorScore = score
+
+    def getPreRankerEvaluatorScore(self):
+        return self.preRankerEvaluatorScore
+
+    def setPreRankerEvaluatorScore(self, score: float):
+        self.preRankerEvaluatorScore = score
+
+    def __str__(self):
+        return self.getName()
 

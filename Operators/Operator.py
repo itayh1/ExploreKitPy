@@ -1,5 +1,6 @@
 
 from enum import Enum
+from typing import List
 
 import pandas as pd
 
@@ -19,6 +20,17 @@ class outputType(Enum):
 
 class Operator:
 
+    @staticmethod
+    def getSeriesType(column: pd.Series) -> outputType:
+        if pd.api.types.is_integer_dtype(column):
+            return outputType.Discrete
+        elif pd.api.types.is_float_dtype(column):
+            return outputType.Numeric
+        elif pd.api.types.is_datetime64_any_dtype(column):
+            return outputType.Date
+        else:
+            raise Exception('Unknown column type')
+
     def __init__(self):
         pass
 
@@ -35,4 +47,7 @@ class Operator:
         raise NotImplementedError("Abstract class Operator shouldn't instanced directly")
 
     def generate(self, dataset: Dataset, sourceColumns: pd.Series, targetColumns: list) -> pd.Series:
+        raise NotImplementedError("Abstract class Operator shouldn't instanced directly")
+
+    def isApplicable(self, dataset: Dataset, sourceColumns: List[pd.Series], targetColumns: List[pd.Series]) -> bool:
         raise NotImplementedError("Abstract class Operator shouldn't instanced directly")

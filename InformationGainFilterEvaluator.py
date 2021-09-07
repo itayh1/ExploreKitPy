@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, List
 
 import numpy as np
 import pandas as pd
@@ -35,24 +35,25 @@ class InformationGainFilterEvaluator(FilterEvaluator):
         # for i in range(analyzedDatasets.getNumOfTestDatasetRows()):
         for j in analyzedDatasets.getIndicesOfTestInstances():
             # sourceValues: list = [self.analyzedColumns[c][j] for c in self.analyzedColumns.columns]
-            sourceValues = self.analyzedColumns[j][[self.analyzedColumns.columns]]
+            sourceValues = [col[j] for col in self.analyzedColumns]  #[self.analyzedColumns.columns]
             targetValue = targetColumn[j]
-            key = hash(sourceValues.tobytes())
+            key = hash(tuple(sourceValues)) #hash(sourceValues.tobytes())
             if key not in valuesPerKey:
-                valuesPerKey[key] = np.zeros(analyzedDatasets.getTargetClassColumn().getColumn().getNumOfPossibleValues())
-            valuesPerKey[sourceValues][targetValue] += 1
+                # valuesPerKey[key] = np.zeros(analyzedDatasets.getTargetClassColumn().getColumn().getNumOfPossibleValues())
+                valuesPerKey[key] = dict.fromkeys(analyzedDatasets.classes, 0)
+            valuesPerKey[key][targetValue] += 1
 
         return self.calculateIG(analyzedDatasets, valuesPerKey)
 
     # def produceScoreWithDistinctValues(self, dataset:Dataset , currentScore:ClassificationResults, oa:OperatorAssignment, candidateAttribute:ColumnInfo):
     #     pass
 
-    def calculateIG(self, dataset: Dataset, valuesPerKey: Dict[int, np.ndarray]):
+    def calculateIG(self, dataset: Dataset, valuesPerKey: Dict[int, Dict[str, int]]):
         IG = 0.0
         for val in valuesPerKey.values():
-            numOfInstances = val.sum()
+            numOfInstances = sum(val.values())
             tempIG = 0
-            for value in val:
+            for value in val.values():
                 if value != 0:
                     tempIG += -((value / numOfInstances) * math.log10(value / numOfInstances))
 

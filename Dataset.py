@@ -107,6 +107,9 @@ class Dataset:
     def getIndicesOfTrainingInstances(self):
         return self.indicesOfTrainingFolds
 
+    def getIndicesOfTestInstances(self):
+        return self.indicesOfTestFolds
+
     def getNumberOfRows(self):
         pass
 
@@ -151,11 +154,33 @@ class Dataset:
         return finalSet
 
     def replicateDatasetByColumnIndices(self, indices: list):
-        newDataset = Dataset(self.df.copy(), self.folds, self.targetClass, self.name,
+        if self.targetClass not in indices:
+            indices.append(self.targetClass)
+        newDataset = Dataset(self.df[indices].copy(), self.folds, self.targetClass, self.name,
                              self.randomSeed, self.maxNumOfDiscreteValuesForInstancesObject)
+        # newDataset.randomSeed = self.randomSeed
+        # newDataset.df = self.df
+        # newDataset.folds = self.folds
+        # newDataset.targetClass = self.targetClass
+        # newDataset.name = self.name
+        newDataset.indicesOfTrainingFolds = self.indicesOfTrainingFolds
+        newDataset.indicesOfTestFolds = self.indicesOfTestFolds
+        # newDataset.classes = self.classes
+        newDataset.numOfTrainingInstancesPerClass = self.numOfTrainingInstancesPerClass
+        newDataset.numOfTestInstancesPerClass = self.numOfTestInstancesPerClass
+        newDataset.maxNumOfDiscreteValuesForInstancesObject = self.numOfTestInstancesPerClass
+        # self.distinctValColumns = distinctValColumns
+
+        # for fold in folds:
+        #     if not fold.isTestFold:
+        #         self.indicesOfTrainingFolds.extend(fold.getIndices())
+        #         for cls in self.classes:
+        #             self.numOfTrainingInstancesPerClass[cls] += fold.getNumOfInstancesPerClass(cls)
+        #     else:
+        #         self.indicesOfTestFolds.extend(fold.getIndices())
+        #         for cls in self.classes:
+        #             self.numOfTestInstancesPerClass[cls] += fold.getNumOfInstancesPerClass(cls)
         return newDataset
 
     def replicateDataset(self):
-        newDataset = Dataset(self.df.copy(), self.folds, self.targetClass, self.name,
-                             self.randomSeed, self.maxNumOfDiscreteValuesForInstancesObject)
-        return newDataset
+        return self.replicateDatasetByColumnIndices(self.df.columns)

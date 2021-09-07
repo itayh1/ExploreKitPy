@@ -1,20 +1,23 @@
 import time
 from builtins import staticmethod
 from typing import List, Dict
+from itertools import combinations
 
 import Parallel
+from AucWrapperEvaluator import AucWrapperEvaluator
 from ClassificationResults import ClassificationResults
 from Dataset import Dataset
 from Date import Date
 from FilterEvaluator import FilterEvaluator
-from FilterPreRankerEvaluator import FilterPreRankerEvaluator
 from InformationGainFilterEvaluator import InformationGainFilterEvaluator
 from Logger import Logger
+from OperationAssignmentAncestorsSingleton import OperationAssignmentAncestorsSingleton
 from OperatorAssignment import OperatorAssignment
 from Operators.AddBinaryOperator import AddBinaryOperator
 from Operators.CombinationGenerator import CombinationGenerator
 from Operators.EqualRangeDiscretizerUnaryOperator import EqualRangeDiscretizerUnaryOperator
 from Operators.Operator import Operator, operatorType, outputType
+from Operators.UnaryOperator import UnaryOperator
 from PreRankerScoreRanker import PreRankerScoreRanker
 from Properties import Properties
 
@@ -34,13 +37,17 @@ class OperatorsAssignmentsManager:
         operatorNames = Properties.unaryOperators.split(",")
         unaryOperatorsList = []
         for unaryOperator in operatorNames:
-            uo = OperatorsAssignmentsManager.getUnaryOperator(unaryOperator)
-            unaryOperatorsList.append(uo)
+            #TODO: temporal try catch - remove when use all operators
+            try:
+                uo = OperatorsAssignmentsManager.getUnaryOperator(unaryOperator)
+                unaryOperatorsList.append(uo)
+            except:
+                pass
         return unaryOperatorsList
 
     # Returns an unary operator by name
     @staticmethod
-    def getUnaryOperator(operatorName: str):
+    def getUnaryOperator(operatorName: str) -> UnaryOperator:
         if operatorName == "EqualRangeDiscretizerUnaryOperator":
             bins = [0] * int(Properties.equalRangeDiscretizerBinsNumber)
             erd = EqualRangeDiscretizerUnaryOperator(bins)
@@ -67,8 +74,11 @@ class OperatorsAssignmentsManager:
         operatorNames = Properties.nonUnaryOperators.split(',')
         operatorsList = []
         for unaryOperator in operatorNames:
-            operator = OperatorsAssignmentsManager.getNonUnaryOperator(unaryOperator)
-            operatorsList.append(operator)
+            try:
+                operator = OperatorsAssignmentsManager.getNonUnaryOperator(unaryOperator)
+                operatorsList.append(operator)
+            except:
+                pass
 
         return operatorsList
 
@@ -149,7 +159,7 @@ class OperatorsAssignmentsManager:
     # Activates the applyOperatorsAndPerformInitialEvaluation function, for all operator types by Unary
     # @param mustIncluseAttributes Attributes which must be in either the source or the target of every generated feature
     @staticmethod
-    def applyNonUnaryOperators(dataset: Dataset, mustIncluseAttributes: List, preRankerEvaluator: FilterPreRankerEvaluator,
+    def applyNonUnaryOperators(dataset: Dataset, mustIncluseAttributes: List, preRankerEvaluator,
                 filterEvaluator: FilterEvaluator, subFoldTrainingDatasets:List[Dataset],  currentScores: List[ClassificationResults]) -> List[OperatorAssignment]:
         nonUnaryOperatorsList = OperatorsAssignmentsManager.getNonUnaryOperatorsList()
         return OperatorsAssignmentsManager.applyOperatorsAndPerformInitialEvaluation(dataset, nonUnaryOperatorsList,mustIncluseAttributes,
@@ -161,9 +171,9 @@ class OperatorsAssignmentsManager:
      # @param operators A list of all the operators whose assignment will be considered
      # @param maxCombinationSize the maximal number of attributes that can be a in the source of each operator. Smaller number (down to 1) are also considered
     @staticmethod
-    def getOperatorAssignments(dataset: Dataset, attributesToInclude: list, operators: list, maxCombinationSize: int):
+    def getOperatorAssignments(dataset: Dataset, attributesToInclude: list, operators: List[Operator], maxCombinationSize: int):
         areNonUniaryOperatorsBeingUsed = False
-        if len(operators) > 0 and not operators[0].getType().equals(operatorType.Unary):
+        if len(operators) > 0 and not operators[0].getType() == operatorType.Unary:
             areNonUniaryOperatorsBeingUsed = True
 
         if attributesToInclude == None: attributesToInclude = []
@@ -173,7 +183,8 @@ class OperatorsAssignmentsManager:
             sourceAttributeCombinations = OperatorsAssignmentsManager.getAttributeCombinations(dataset.getAllColumns(False), i)
 
             # for each of the candidate source attributes combinations
-            for sources in sourceAttributeCombinations:
+            for listOfAttrs in sourceAttributeCombinations:
+                sources: List[pd.Series] = [dataset.df[colName] for colName in listOfAttrs]
                 # if a distinct dolumn(s) exists, we need to make sure that at least one column (or one of its ancestors) satisfies the constraint
                 # ignore - distinct value
                 # if dataset.getDistinctValueColumns() != None and len(dataset.getDistinctValueColumns()) > 0:
@@ -185,18 +196,18 @@ class OperatorsAssignmentsManager:
                 # first check if any of the required atts (if there are any) are included
                 if len(attributesToInclude) > 0:
                     tempList = sources.copy()
-                    tempList = [item for item in tempList if item in attributesToInclude]
+                    tempList = [item for item in tempList if item in attributesToInclude] #TODO: change to item.name
                     if len(tempList) == 0:
                         continue
 
                 # Now we check all the operators on the source attributes alone.
                 for operator in operators:
-                    if operator.isApplicable(dataset, sources, []):
+                    if operator.isApplicable(dataset, sources, None):
                         os = OperatorAssignment(sources, None, OperatorsAssignmentsManager.getOperator(operator), None)
                         operatorsAssignments.append(os)
 
                     # now we pair the source attributes with a target attribute and check again
-                    for targetColumn in dataset.getAllColumns(False):
+                    for targetColumnName, targetColumn in dataset.getAllColumns(False).iteritems():
                         # if (sources.contains(targetColumn)) { continue; }
                         if OperatorsAssignmentsManager.overlapExistsBetweenSourceAndTargetAttributes(sources,targetColumn): continue
                         tempList = []
@@ -211,9 +222,9 @@ class OperatorsAssignmentsManager:
         for os in operatorsAssignments:
             if os.getOperator().getType() != operatorType.Unary:
                 for operator in OperatorsAssignmentsManager.getUnaryOperatorsList():
-                    if operator.getType().equals(operatorType.Unary):
+                    if operator.getType() == operatorType.Unary:
                         tempOperator = operator
-                        if tempOperator.requiredInputType().equals(os.getOperator().getOutputType()):
+                        if tempOperator.requiredInputType() == os.getOperator().getOutputType():
                             additionalAssignment = OperatorAssignment(os.getSources(), os.getTargets(), os.getOperator(), tempOperator)
                             additionalAssignments.append(additionalAssignment)
 
@@ -222,66 +233,68 @@ class OperatorsAssignmentsManager:
         return operatorsAssignments
 
     @staticmethod
-    def overlapExistsBetweenSourceAndTargetAttributes(sourceAtts: list, targetAtt) -> bool:
+    def overlapExistsBetweenSourceAndTargetAttributes(sourceAtts, targetAtt) -> bool:
         # the simplest case - the same attribute appears both in the source and the target
-        if (sourceAtts.contains(targetAtt)):
+        sourceAttsNames = [series.name for series in sourceAtts]
+        if targetAtt.name in sourceAttsNames:
             return True
 
-
+        oaAncestors = OperationAssignmentAncestorsSingleton()
         # Now we need to check that the source atts and the target att has no shared columns (including after the application of an operator)
-        sourceAttsAndAncestors = []
-        for sourceAtt in sourceAtts:
-            sourceAttsAndAncestors.append(sourceAtt)
-            if sourceAtt.getSourceColumns() != None:
-                for ancestorAtt in sourceAtt.getSourceColumns():
+        sourceAttsAndAncestorsNames = []
+        for sourceAtt in sourceAttsNames:
+            sourceAttsAndAncestorsNames.append(sourceAtt)
+            if oaAncestors.getSources(sourceAtt)[0]:
+                for ancestorAtt in oaAncestors.getSources(sourceAtt)[1]:
                     # if (!sourceAttsAndAncestors.contains(ancestorAtt)) {
-                    if ancestorAtt not in sourceAttsAndAncestors:
-                        sourceAttsAndAncestors.append(ancestorAtt)
+                    if ancestorAtt.name not in sourceAttsAndAncestorsNames:
+                        sourceAttsAndAncestorsNames.append(ancestorAtt.name)
 
-            if sourceAtt.getTargetColumns() != None:
-                for ancestorAtt in sourceAtt.getTargetColumns():
+            if oaAncestors.getTargets(sourceAtt)[0]:
+                for ancestorAtt in oaAncestors.getTargets(sourceAtt)[1]:
                     # if (!sourceAttsAndAncestors.contains(ancestorAtt)) {
-                    if ancestorAtt not in sourceAttsAndAncestors:
-                        sourceAttsAndAncestors.append(ancestorAtt)
+                    if ancestorAtt.name not in sourceAttsAndAncestorsNames:
+                        sourceAttsAndAncestorsNames.append(ancestorAtt.name)
 
         # do the same for the target att (because we only have one we don't need the external loop)
-        targetAttsAndAncestors = []
-        targetAttsAndAncestors.append(targetAtt)
-        if targetAtt.getSourceColumns() != None:
-            for ancestorAtt in targetAtt.getSourceColumns():
+        targetAttsAndAncestorsNames = []
+        targetAttsAndAncestorsNames.append(targetAtt.name)
+        if oaAncestors.getSources(targetAtt.name)[0]:
+            for ancestorAtt in oaAncestors.getSources(targetAtt.name)[1]:
                 # if (!targetAttsAndAncestors.contains(ancestorAtt)) {
-                if ancestorAtt not in targetAttsAndAncestors:
-                    targetAttsAndAncestors.append(ancestorAtt)
+                if ancestorAtt.name not in targetAttsAndAncestorsNames:
+                    targetAttsAndAncestorsNames.append(ancestorAtt.name)
 
-        if targetAtt.getTargetColumns() != None:
-            for ancestorAtt in targetAtt.getTargetColumns():
+        if oaAncestors.getTargets(targetAtt.name)[0]:
+            for ancestorAtt in oaAncestors.getTargets(targetAtt.name)[1]:
                 # if (!targetAttsAndAncestors.contains(ancestorAtt)) {
-                if ancestorAtt not in targetAttsAndAncestors:
-                    targetAttsAndAncestors.append(ancestorAtt)
+                if ancestorAtt.name not in targetAttsAndAncestorsNames:
+                    targetAttsAndAncestorsNames.append(ancestorAtt.name)
 
         # boolean overlap =  !Collections.disjoint(sourceAttsAndAncestors, targetAttsAndAncestors);
-        if len(set(sourceAttsAndAncestors).intersection(set(targetAttsAndAncestors))) > 0:
-            overlap =  True
+        if len(set(sourceAttsAndAncestorsNames).intersection(set(targetAttsAndAncestorsNames))) > 0:
+            overlap = True
         else:
             overlap = False
 
         #Todo: what is it mean
-        if overlap and len(targetAttsAndAncestors) > 1:
+        if overlap and len(targetAttsAndAncestorsNames) > 1:
             x=5
 
         return overlap
 
     # Returns lists of column-combinations
     @staticmethod
-    def getAttributeCombinations(self, attributes: list, numOfAttributesInCombination: int) -> list:
-        attributeCombinations = []
-        gen = CombinationGenerator(len(attributes), numOfAttributesInCombination)
-        while gen.hasMore():
-            indices = gen.getNext()
-            tempColumns = []
-            for index in indices:
-                tempColumns.append(attributes[index])
-            attributeCombinations.append(tempColumns)
+    def getAttributeCombinations(attributes: pd.DataFrame, numOfAttributesInCombination: int) -> List[tuple]:
+        attributeCombinations = list(combinations(attributes.columns.values, numOfAttributesInCombination))
+        # attributeCombinations = []
+        # gen = CombinationGenerator(attributes.shape[1], numOfAttributesInCombination)
+        # while gen.hasMore():
+        #     indices = gen.getNext()
+        #     tempColumns = []
+        #     for index in indices:
+        #         tempColumns.append(attributes[index])
+        #     attributeCombinations.append(tempColumns)
 
         return attributeCombinations
 
@@ -304,7 +317,7 @@ class OperatorsAssignmentsManager:
      # @param subFoldTrainingDatasets The training set sub-folds. Used in order to calculate the score, as the test set cannot be used for this purpose here.
     @staticmethod
     def applyOperatorsAndPerformInitialEvaluation(dataset: Dataset, operators: List[Operator], mustIncluseAttributes,
-                maxNumOfSourceAttributes: int, filterEvaluator: FilterEvaluator, preRankerEvaluator: FilterPreRankerEvaluator,
+                maxNumOfSourceAttributes: int, filterEvaluator: FilterEvaluator, preRankerEvaluator,
                 subFoldTrainingDatasets:List[Dataset], currentScores:List[ClassificationResults], reduceNumberOfAttributes:bool) -> List[OperatorAssignment]:
 
         # in case the number of initial attributes is very high, we need narrow the search space
@@ -333,7 +346,24 @@ class OperatorsAssignmentsManager:
         # }*/
         return operatorAssignments
 
-     # Ranks all current DISCRETE columns in the dataset using a filter evaluator and returns the top X ranking columns (ties are broken randomly)
+    # Generates/retrieves the attribute specified, adds it to a replica of the dataset and calculates the score
+    # based on the provided wrapper method
+    def applyOperatorAndPerformWrapperEvaluation(self, datasets: List[Dataset], operatorAssignment: OperatorAssignment,
+                wrapperEvaluator: AucWrapperEvaluator, currentScores:  List[ClassificationResults], completeDataset:  Dataset):
+        score = 0.0
+        for i in range(len(datasets)):
+            dataset = datasets[i]
+            currentScore = None
+            if currentScores != None:
+                currentScore = currentScores[i]
+
+            datasetReplica = dataset.replicateDataset()
+            ci = OperatorsAssignmentsManager.generateColumn(datasetReplica, operatorAssignment, True)
+            iterationScore = wrapperEvaluator.produceScore(datasetReplica, currentScore, completeDataset, operatorAssignment, ci)
+            score += iterationScore
+        return score/len(datasets)
+
+    # Ranks all current DISCRETE columns in the dataset using a filter evaluator and returns the top X ranking columns (ties are broken randomly)
     @staticmethod
     def getTopRankingDiscreteAttributesByFilterScore(dataset: Dataset, filterEvaluator: FilterEvaluator, numOfAttributesToReturn: int) -> list:
         IGScoresPerColumnIndex: Dict[float, list] = {}
@@ -369,7 +399,7 @@ class OperatorsAssignmentsManager:
 
     @staticmethod
     def getTopRankingOperatorAssignmentsWithoutGenerating( subFoldTrainingDatasets: List[Dataset], operatorAssignments:List[OperatorAssignment],
-                             preRankerEvaluator: FilterPreRankerEvaluator, numOfOperatorAssignmentsToGet:int)->OperatorAssignment:
+                             preRankerEvaluator, numOfOperatorAssignmentsToGet:int) -> List[OperatorAssignment]:
         replicatedSubFoldsList = []
         for subFoldDataset in subFoldTrainingDatasets:
             replicatedSubFoldsList.append(subFoldDataset.replicateDataset())
@@ -425,7 +455,7 @@ class OperatorsAssignmentsManager:
 
                 ci = OperatorsAssignmentsManager.generateColumn(replicatedDataset, oa, True)
                  # if the filter evaluator is not null, we'll conduct the initial evaluation of the new attribute
-                if (ci != None) and (filterEvaluator != None):
+                if (ci is not None) and (filterEvaluator is not None):
                  # filterEvaluationLock.lock();
                     cloneEvaluator = filterEvaluator.getCopy()
                     replicatedSubFoldsList = []
@@ -476,12 +506,12 @@ class OperatorsAssignmentsManager:
                 operator.processTrainingSet(dataset, os.getSources(), os.getTargets())
 
                 try:
-                    ci = operator.generate(dataset, os.getSources(), os.getTargets(), True)
+                    ci = operator.generate(dataset, os.getSources(), os.getTargets())
 
                 except:
                     x=5
 
-                if ci != None and os != None and os.getSecondaryOperator() != None:
+                if (ci is not None) and (os is not None) and (os.getSecondaryOperator() is not None):
                     replica = dataset.emptyReplica()
                     replica.addColumn(ci)
                     uOperator = os.getSecondaryOperator()
@@ -504,7 +534,7 @@ class OperatorsAssignmentsManager:
         except Exception as ex:
             operator = OperatorsAssignmentsManager.getOperator(os.getOperator())
             operator.processTrainingSet(dataset, os.getSources(), os.getTargets())
-            Logger.Error("Error while generating column: " + ex, ex)
+            Logger.Error("Error while generating column: " + str(ex), ex)
             raise Exception("Failure to generate column")
 
     # Evaluates a set of datasets using a leave-one-out evaluation
@@ -533,6 +563,15 @@ class OperatorsAssignmentsManager:
                 finalScore += filterEvaluator.produceScore(datasetEmptyReplica, currentScore, dataset, operatorAssignment, ci)
 
         return finalScore / len(datasets)
+
+    # Used to recalculate the scores of existing attributes when a new search iteration begins.
+    @staticmethod
+    def recalculateFilterEvaluatorScores(dataset: Dataset, candidateAttributes: List[OperatorAssignment], subFoldTrainingDatasets: List[Dataset],
+            filterEvaluator: FilterEvaluator, currentScores: List[ClassificationResults]):
+        # If the filter is not of a type that requires recalculcation (like IG) then terminate
+        if not filterEvaluator.needToRecalculateScoreAtEachIteration():
+            return
+        OperatorsAssignmentsManager.generateAttributeAndCalculateFilterEvaluatorScore(dataset, filterEvaluator, subFoldTrainingDatasets, currentScores, candidateAttributes)
 
     # Read column from a file
     def readColumnInfoFromFile(self, datasetName: str, operatorAssignmentName: str):

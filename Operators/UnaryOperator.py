@@ -1,6 +1,9 @@
 
 from typing import List
 
+import pandas as pd
+
+from Dataset import Dataset
 from Operators.Operator import Operator, operatorType, outputType
 
 
@@ -15,3 +18,12 @@ class UnaryOperator(Operator):
 
     def requiredInputType(self) -> outputType:
         raise NotImplementedError("UnaryOperator is an abstract class")
+
+    def isApplicable(self, dataset: Dataset, sourceColumns: List[pd.Series], targetColumns: List[pd.Series]) -> bool:
+        # if there are any target columns or if there is more than one source column, return false
+        if len(sourceColumns) != 1 or (targetColumns != None and len(targetColumns) != 0):
+        # if targetColumns != None and targetColumns.shape[0] != 0:
+            return False
+        else:
+            return True
+

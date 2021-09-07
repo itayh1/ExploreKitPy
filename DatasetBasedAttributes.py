@@ -6,8 +6,9 @@ import scipy.stats
 
 from AttributeInfo import AttributeInfo
 from AucWrapperEvaluator import AucWrapperEvaluator
-from Column import Column
+# from Column import Column
 from Dataset import Dataset
+from Operators import Operator
 from Operators.EqualRangeDiscretizerUnaryOperator import EqualRangeDiscretizerUnaryOperator
 # from FilterWrapperHeuristicSearch import FilterWrapperHeuristicSearch
 from InformationGainFilterEvaluator import InformationGainFilterEvaluator
@@ -292,7 +293,9 @@ class DatasetBasedAttributes:
         for i in range(len(self.numericAttributesList)-1):
             for j in range(i+1, len(self.numericAttributesList)):
                 if i != j:
-                    tTestVal = abs(scipy.stats.ttest_ind(self.numericAttributesList[i], self.numericAttributesList[j]))
+                    tstat, pval = scipy.stats.ttest_ind(dataset.df[self.numericAttributesList[i]].values,
+                                                        dataset.df[self.numericAttributesList[j]].values)
+                    tTestVal = abs(tstat)
                     if not np.isnan(tTestVal) and not np.isinf(tTestVal):
                         pairedTTestValuesList.append(tTestVal)
 
@@ -317,7 +320,8 @@ class DatasetBasedAttributes:
         for i in range(len(self.discreteAttributesList)-1):
             for j in range(i+1, len(self.discreteAttributesList)):
                 if i != j:
-                    counts = self.generateDiscreteAttributesCategoryIntersection(self.discreteAttributesList[i], self.discreteAttributesList[i])
+                    counts = self.generateDiscreteAttributesCategoryIntersection(dataset.df[self.discreteAttributesList[i]],
+                                                                                 dataset.df[self.discreteAttributesList[j]])
                     # testVal = chiSquareTest.chiSquare(counts)
                     testVal = scipy.stats.chi2_contingency(counts)
                     if not np.isnan(testVal) and not np.isinf(testVal):
@@ -343,9 +347,10 @@ class DatasetBasedAttributes:
         for ci in self.numericAttributesList:
             erduo = EqualRangeDiscretizerUnaryOperator(bins)
             tempColumnsList = []
-            tempColumnsList.append(ci)
+            tempColumnsList.append(dataset.df[ci])
+            # tempColumnsList = dataset.df[ci]
             erduo.processTrainingSet(dataset,tempColumnsList,None)
-            discretizedAttribute = erduo.generate(dataset, tempColumnsList, None, False)
+            discretizedAttribute = erduo.generate(dataset, tempColumnsList, None)
             discretizedColumns.append(discretizedAttribute)
 
         # now we add all the original discrete attributes to this list and run the Chi-Square test again
@@ -354,8 +359,8 @@ class DatasetBasedAttributes:
         for i in range(len(discretizedColumns)-1):
             for j in range(i + 1, len(discretizedColumns)):
                 if (i!=j):
-                    counts = self.generateDiscreteAttributesCategoryIntersection(self.discreteAttributesList[i], self.discreteAttributesList[i])
-                    testVal = scipy.stats.chi2_contingency(counts)
+                    counts = self.generateDiscreteAttributesCategoryIntersection(discretizedColumns[i], discretizedColumns[j])
+                    testVal = scipy.stats.chi2_contingency(counts)[0]
                     if not np.isnan(testVal) and not np.isinf(testVal):
                         chiSquaredTestValuesList.append(testVal)
 
@@ -379,51 +384,51 @@ class DatasetBasedAttributes:
     def generateDatasetAttributesMap(self):
         attributes = {}
 
-        att1 = AttributeInfo("numOfInstances", Column.columnType.Numeric, self.numOfInstances,-1)
-        att2 = AttributeInfo("numOfClasses", Column.columnType.Numeric, self.numOfClasses,-1)
-        att3 = AttributeInfo("numOfFeatures", Column.columnType.Numeric, self.numOfFeatures,-1)
-        att4 = AttributeInfo("numOfNumericAtributes", Column.columnType.Numeric, self.numOfNumericAtributes,-1)
-        att5 = AttributeInfo("numOfDiscreteAttributes", Column.columnType.Numeric, self.numOfDiscreteAttributes,-1)
-        att6 = AttributeInfo("ratioOfNumericAttributes", Column.columnType.Numeric, self.ratioOfNumericAttributes,-1)
-        att7 = AttributeInfo("ratioOfDiscreteAttributes", Column.columnType.Numeric, self.ratioOfDiscreteAttributes,-1)
-        att8 = AttributeInfo("maxNumberOfDiscreteValuesPerAttribute", Column.columnType.Numeric, self.maxNumberOfDiscreteValuesPerAttribute,-1)
-        att9 = AttributeInfo("minNumberOfDiscreteValuesPerAttribtue", Column.columnType.Numeric, self.minNumberOfDiscreteValuesPerAttribtue,-1)
-        att10 = AttributeInfo("avgNumOfDiscreteValuesPerAttribute", Column.columnType.Numeric, self.avgNumOfDiscreteValuesPerAttribute,-1)
-        att11 = AttributeInfo("stdevNumOfDiscreteValuesPerAttribute", Column.columnType.Numeric, self.stdevNumOfDiscreteValuesPerAttribute,-1)
-        att12 = AttributeInfo("numOfFoldsInEvaluation", Column.columnType.Numeric, self.numOfFoldsInEvaluation,-1)
-        att13 = AttributeInfo("maxAUC", Column.columnType.Numeric, self.maxAUC,-1)
-        att14 = AttributeInfo("minAUC", Column.columnType.Numeric, self.minAUC,-1)
-        att15 = AttributeInfo("avgAUC", Column.columnType.Numeric, self.avgAUC,-1)
-        att16 = AttributeInfo("stdevAUC", Column.columnType.Numeric, self.stdevAUC,-1)
-        att17 = AttributeInfo("maxLogLoss", Column.columnType.Numeric, self.maxLogLoss,-1)
-        att18 = AttributeInfo("minLogLoss", Column.columnType.Numeric, self.minLogLoss,-1)
-        att19 = AttributeInfo("avgLogLoss", Column.columnType.Numeric, self.avgLogLoss,-1)
-        att20 = AttributeInfo("stdevLogLoss", Column.columnType.Numeric, self.stdevLogLoss,-1)
-        att21 = AttributeInfo("maxIGVal", Column.columnType.Numeric, self.maxIGVal,-1)
-        att22 = AttributeInfo("minIGVal", Column.columnType.Numeric, self.minIGVal,-1)
-        att23 = AttributeInfo("avgIGVal", Column.columnType.Numeric, self.avgIGVal,-1)
-        att24 = AttributeInfo("stdevIGVal", Column.columnType.Numeric, self.stdevIGVal,-1)
-        att25 = AttributeInfo("discreteAttsMaxIGVal", Column.columnType.Numeric, self.discreteAttsMaxIGVal,-1)
-        att26 = AttributeInfo("discreteAttsMinIGVal", Column.columnType.Numeric, self.discreteAttsMinIGVal,-1)
-        att27 = AttributeInfo("discreteAttsAvgIGVal", Column.columnType.Numeric, self.discreteAttsAvgIGVal,-1)
-        att28 = AttributeInfo("discreteAttsStdevIGVal", Column.columnType.Numeric, self.discreteAttsStdevIGVal,-1)
-        att29 = AttributeInfo("numericAttsMaxIGVal", Column.columnType.Numeric, self.numericAttsMaxIGVal,-1)
-        att30 = AttributeInfo("numericAttsMinIGVal", Column.columnType.Numeric, self.numericAttsMinIGVal,-1)
-        att31 = AttributeInfo("numericAttsAvgIGVal", Column.columnType.Numeric, self.numericAttsAvgIGVal,-1)
-        att32 = AttributeInfo("numericAttsStdevIGVal", Column.columnType.Numeric, self.numericAttsStdevIGVal,-1)
-        att33 = AttributeInfo("maxPairedTTestValueForNumericAttributes", Column.columnType.Numeric, self.maxPairedTTestValueForNumericAttributes,-1)
-        att34 = AttributeInfo("minPairedTTestValueForNumericAttributes", Column.columnType.Numeric, self.minPairedTTestValueForNumericAttributes,-1)
-        att35 = AttributeInfo("avgPairedTTestValueForNumericAttributes", Column.columnType.Numeric, self.avgPairedTTestValueForNumericAttributes,-1)
-        att36 = AttributeInfo("stdevPairedTTestValueForNumericAttributes", Column.columnType.Numeric, self.stdevPairedTTestValueForNumericAttributes,-1)
-        att37 = AttributeInfo("maxChiSquareValueforDiscreteAttributes", Column.columnType.Numeric, self.maxChiSquareValueforDiscreteAttributes,-1)
-        att38 = AttributeInfo("minChiSquareValueforDiscreteAttributes", Column.columnType.Numeric, self.minChiSquareValueforDiscreteAttributes,-1)
-        att39 = AttributeInfo("avgChiSquareValueforDiscreteAttributes", Column.columnType.Numeric, self.avgChiSquareValueforDiscreteAttributes,-1)
-        att40 = AttributeInfo("stdevChiSquareValueforDiscreteAttributes", Column.columnType.Numeric, self.stdevChiSquareValueforDiscreteAttributes,-1)
-        att41 = AttributeInfo("maxChiSquareValueforDiscreteAndDiscretizedAttributes", Column.columnType.Numeric, self.maxChiSquareValueforDiscreteAndDiscretizedAttributes,-1)
-        att42 = AttributeInfo("minChiSquareValueforDiscreteAndDiscretizedAttributes", Column.columnType.Numeric, self.minChiSquareValueforDiscreteAndDiscretizedAttributes,-1)
-        att43 = AttributeInfo("avgChiSquareValueforDiscreteAndDiscretizedAttributes", Column.columnType.Numeric, self.avgChiSquareValueforDiscreteAndDiscretizedAttributes,-1)
-        att44 = AttributeInfo("stdevChiSquareValueforDiscreteAndDiscretizedAttributes", Column.columnType.Numeric, self.stdevChiSquareValueforDiscreteAndDiscretizedAttributes,-1)
-        att45 = AttributeInfo("minorityClassPercentage", Column.columnType.Numeric, self.minorityClassPercentage,-1)
+        att1 = AttributeInfo("numOfInstances", Operator.outputType.Numeric, self.numOfInstances,-1)
+        att2 = AttributeInfo("numOfClasses", Operator.outputType.Numeric, self.numOfClasses,-1)
+        att3 = AttributeInfo("numOfFeatures", Operator.outputType.Numeric, self.numOfFeatures,-1)
+        att4 = AttributeInfo("numOfNumericAtributes", Operator.outputType.Numeric, self.numOfNumericAtributes,-1)
+        att5 = AttributeInfo("numOfDiscreteAttributes", Operator.outputType.Numeric, self.numOfDiscreteAttributes,-1)
+        att6 = AttributeInfo("ratioOfNumericAttributes", Operator.outputType.Numeric, self.ratioOfNumericAttributes,-1)
+        att7 = AttributeInfo("ratioOfDiscreteAttributes", Operator.outputType.Numeric, self.ratioOfDiscreteAttributes,-1)
+        att8 = AttributeInfo("maxNumberOfDiscreteValuesPerAttribute", Operator.outputType.Numeric, self.maxNumberOfDiscreteValuesPerAttribute,-1)
+        att9 = AttributeInfo("minNumberOfDiscreteValuesPerAttribtue", Operator.outputType.Numeric, self.minNumberOfDiscreteValuesPerAttribtue,-1)
+        att10 = AttributeInfo("avgNumOfDiscreteValuesPerAttribute", Operator.outputType.Numeric, self.avgNumOfDiscreteValuesPerAttribute,-1)
+        att11 = AttributeInfo("stdevNumOfDiscreteValuesPerAttribute", Operator.outputType.Numeric, self.stdevNumOfDiscreteValuesPerAttribute,-1)
+        att12 = AttributeInfo("numOfFoldsInEvaluation", Operator.outputType.Numeric, self.numOfFoldsInEvaluation,-1)
+        att13 = AttributeInfo("maxAUC", Operator.outputType.Numeric, self.maxAUC,-1)
+        att14 = AttributeInfo("minAUC", Operator.outputType.Numeric, self.minAUC,-1)
+        att15 = AttributeInfo("avgAUC", Operator.outputType.Numeric, self.avgAUC,-1)
+        att16 = AttributeInfo("stdevAUC", Operator.outputType.Numeric, self.stdevAUC,-1)
+        att17 = AttributeInfo("maxLogLoss", Operator.outputType.Numeric, self.maxLogLoss,-1)
+        att18 = AttributeInfo("minLogLoss", Operator.outputType.Numeric, self.minLogLoss,-1)
+        att19 = AttributeInfo("avgLogLoss", Operator.outputType.Numeric, self.avgLogLoss,-1)
+        att20 = AttributeInfo("stdevLogLoss", Operator.outputType.Numeric, self.stdevLogLoss,-1)
+        att21 = AttributeInfo("maxIGVal", Operator.outputType.Numeric, self.maxIGVal,-1)
+        att22 = AttributeInfo("minIGVal", Operator.outputType.Numeric, self.minIGVal,-1)
+        att23 = AttributeInfo("avgIGVal", Operator.outputType.Numeric, self.avgIGVal,-1)
+        att24 = AttributeInfo("stdevIGVal", Operator.outputType.Numeric, self.stdevIGVal,-1)
+        att25 = AttributeInfo("discreteAttsMaxIGVal", Operator.outputType.Numeric, self.discreteAttsMaxIGVal,-1)
+        att26 = AttributeInfo("discreteAttsMinIGVal", Operator.outputType.Numeric, self.discreteAttsMinIGVal,-1)
+        att27 = AttributeInfo("discreteAttsAvgIGVal", Operator.outputType.Numeric, self.discreteAttsAvgIGVal,-1)
+        att28 = AttributeInfo("discreteAttsStdevIGVal", Operator.outputType.Numeric, self.discreteAttsStdevIGVal,-1)
+        att29 = AttributeInfo("numericAttsMaxIGVal", Operator.outputType.Numeric, self.numericAttsMaxIGVal,-1)
+        att30 = AttributeInfo("numericAttsMinIGVal", Operator.outputType.Numeric, self.numericAttsMinIGVal,-1)
+        att31 = AttributeInfo("numericAttsAvgIGVal", Operator.outputType.Numeric, self.numericAttsAvgIGVal,-1)
+        att32 = AttributeInfo("numericAttsStdevIGVal", Operator.outputType.Numeric, self.numericAttsStdevIGVal,-1)
+        att33 = AttributeInfo("maxPairedTTestValueForNumericAttributes", Operator.outputType.Numeric, self.maxPairedTTestValueForNumericAttributes,-1)
+        att34 = AttributeInfo("minPairedTTestValueForNumericAttributes", Operator.outputType.Numeric, self.minPairedTTestValueForNumericAttributes,-1)
+        att35 = AttributeInfo("avgPairedTTestValueForNumericAttributes", Operator.outputType.Numeric, self.avgPairedTTestValueForNumericAttributes,-1)
+        att36 = AttributeInfo("stdevPairedTTestValueForNumericAttributes", Operator.outputType.Numeric, self.stdevPairedTTestValueForNumericAttributes,-1)
+        att37 = AttributeInfo("maxChiSquareValueforDiscreteAttributes", Operator.outputType.Numeric, self.maxChiSquareValueforDiscreteAttributes,-1)
+        att38 = AttributeInfo("minChiSquareValueforDiscreteAttributes", Operator.outputType.Numeric, self.minChiSquareValueforDiscreteAttributes,-1)
+        att39 = AttributeInfo("avgChiSquareValueforDiscreteAttributes", Operator.outputType.Numeric, self.avgChiSquareValueforDiscreteAttributes,-1)
+        att40 = AttributeInfo("stdevChiSquareValueforDiscreteAttributes", Operator.outputType.Numeric, self.stdevChiSquareValueforDiscreteAttributes,-1)
+        att41 = AttributeInfo("maxChiSquareValueforDiscreteAndDiscretizedAttributes", Operator.outputType.Numeric, self.maxChiSquareValueforDiscreteAndDiscretizedAttributes,-1)
+        att42 = AttributeInfo("minChiSquareValueforDiscreteAndDiscretizedAttributes", Operator.outputType.Numeric, self.minChiSquareValueforDiscreteAndDiscretizedAttributes,-1)
+        att43 = AttributeInfo("avgChiSquareValueforDiscreteAndDiscretizedAttributes", Operator.outputType.Numeric, self.avgChiSquareValueforDiscreteAndDiscretizedAttributes,-1)
+        att44 = AttributeInfo("stdevChiSquareValueforDiscreteAndDiscretizedAttributes", Operator.outputType.Numeric, self.stdevChiSquareValueforDiscreteAndDiscretizedAttributes,-1)
+        att45 = AttributeInfo("minorityClassPercentage", Operator.outputType.Numeric, self.minorityClassPercentage,-1)
 
         attributes[len(attributes)] = att1
         attributes[len(attributes)] = att2
@@ -473,10 +478,10 @@ class DatasetBasedAttributes:
 
         # now we need to process the multiple values of the precision/recall analysis.
         for key in self.maxPrecisionAtFixedRecallValues.keys():
-            maxPrecisionAtt = AttributeInfo("maxPrecisionAtFixedRecallValues_" + key, Column.columnType.Numeric, self.maxPrecisionAtFixedRecallValues[key],-1)
-            minPrecisionAtt = AttributeInfo("minPrecisionAtFixedRecallValues_" + key, Column.columnType.Numeric, self.minPrecisionAtFixedRecallValues[key],-1)
-            avgPrecisionAtt = AttributeInfo("avgPrecisionAtFixedRecallValues_" + key, Column.columnType.Numeric, self.avgPrecisionAtFixedRecallValues[key],-1)
-            stdevPrecisionAtt = AttributeInfo("stdevPrecisionAtFixedRecallValues_" + key, Column.columnType.Numeric, self.stdevPrecisionAtFixedRecallValues[key],-1)
+            maxPrecisionAtt = AttributeInfo("maxPrecisionAtFixedRecallValues_" + str(key), Operator.outputType.Numeric, self.maxPrecisionAtFixedRecallValues[key],-1)
+            minPrecisionAtt = AttributeInfo("minPrecisionAtFixedRecallValues_" + str(key), Operator.outputType.Numeric, self.minPrecisionAtFixedRecallValues[key],-1)
+            avgPrecisionAtt = AttributeInfo("avgPrecisionAtFixedRecallValues_" + str(key), Operator.outputType.Numeric, self.avgPrecisionAtFixedRecallValues[key],-1)
+            stdevPrecisionAtt = AttributeInfo("stdevPrecisionAtFixedRecallValues_" + str(key), Operator.outputType.Numeric, self.stdevPrecisionAtFixedRecallValues[key],-1)
             attributes[len(attributes)] = maxPrecisionAtt
             attributes[len(attributes)] = minPrecisionAtt
             attributes[len(attributes)] = avgPrecisionAtt
@@ -484,18 +489,25 @@ class DatasetBasedAttributes:
 
         return attributes
 
-    def generateDiscreteAttributesCategoryIntersection(self, col1, col2):
-        intersectionsMatrix = np.zeros((col1.getNumOfPossibleValues(), col2.getNumOfPossibleValues()))
-        col1Values = col1.getValues()
-        col2Values = col2.getValues()
+    def generateDiscreteAttributesCategoryIntersection(self, col1: pd.Series, col2: pd.Series):
+        col1 = col1.value_counts()
+        col2 = col2.value_counts()
 
-        if len(col1Values) != len(col2Values):
-            raise Exception("Columns do not have the same number of instances")
+        tempDf = pd.merge(col1.reset_index(), col2.reset_index(), how='inner')
+        return tempDf.iloc[:,1:3].T.to_numpy()
 
-        for i in range(len(col1Values)):
-            intersectionsMatrix[col1Values[i]][col2Values[i]] += 1
-
-        return intersectionsMatrix
+    # def generateDiscreteAttributesCategoryIntersection(self, col1: pd.Series, col2: pd.Series):
+    #     intersectionsMatrix = np.zeros((col1.max() + 1, col2.max()+1))
+    #     col1Values = col1.values
+    #     col2Values = col2.values
+    #
+    #     if len(col1Values) != len(col2Values):
+    #         raise Exception("Columns do not have the same number of instances")
+    #
+    #     for i in range(len(col1Values)):
+    #         intersectionsMatrix[col1Values[i]][col2Values[i]] += 1
+    #
+    #     return intersectionsMatrix
 
 
 

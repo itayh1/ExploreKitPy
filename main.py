@@ -1,5 +1,5 @@
 
-from sklearn.model_selection import KFold
+from sklearn.model_selection import KFold, StratifiedKFold
 import  pandas as pd
 import arff
 # from scipy.io import arff
@@ -7,6 +7,7 @@ from FilterWrapperHeuristicSearch import FilterWrapperHeuristicSearch
 from Loader import Loader
 
 def getFolds(df: pd.DataFrame, k: int) -> list:
+    #TODO: make it Stratified-KFold
     cv = KFold(n_splits=k, shuffle=True, random_state=20)
     cv.get_n_splits()
     folds = []

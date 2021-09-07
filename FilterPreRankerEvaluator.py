@@ -4,11 +4,12 @@ from AttributeInfo import AttributeInfo
 from ClassificationItem import ClassificationItem
 from ClassificationResults import ClassificationResults
 from Classifier import Classifier
-from Column import Column
+# from Column import Column
 from Dataset import Dataset
 from DatasetBasedAttributes import DatasetBasedAttributes
 from Logger import Logger
 from MLAttributeManager import MLAttributeManager
+from Operators.Operator import outputType
 from OperatorAssignment import OperatorAssignment
 from OperatorAssignmentBasedAttributes import OperatorAssignmentBasedAttributes
 from Properties import Properties
@@ -40,7 +41,7 @@ class FilterPreRankerEvaluator:
 
             # we need to generate the features for this candidate attribute and then run the (previously) calculated classification model
             oaba = OperatorAssignmentBasedAttributes()
-            oaAttributes: dict = [] #oaba.getOperatorAssignmentBasedMetaFeatures(analyzedDatasets, oa)
+            oaAttributes: dict = {} #oaba.getOperatorAssignmentBasedMetaFeatures(analyzedDatasets, oa)
 
 
             candidateAttributes = {k:v for k,v in self.datasetAttributes.items()}
@@ -49,11 +50,11 @@ class FilterPreRankerEvaluator:
 
 
             # We need to add the type of the classifier we're using
-            classifierAttribute = AttributeInfo("Classifier", Column.columnType.Discrete, Properties.classifier, len(Properties.classifiersForMLAttributesGeneration.split(",")))
+            classifierAttribute = AttributeInfo("Classifier", outputType.Discrete, Properties.classifier, len(Properties.classifiersForMLAttributesGeneration.split(",")))
             candidateAttributes[len(candidateAttributes)] = classifierAttribute
 
             # In order to have attributes of the same set size, we need to add the class attribute. We don't know the true value, so we set it to negative
-            classAttrubute = AttributeInfo("classAttribute", Column.columnType.Discrete, 0, 2)
+            classAttrubute = AttributeInfo("classAttribute", outputType.Discrete, 0, 2)
             candidateAttributes[len(candidateAttributes)] = classAttrubute
 
 
@@ -68,11 +69,11 @@ class FilterPreRankerEvaluator:
             # we have a single prediction, so it's easy to process
             evaluationInfo = self.classifier.evaluateClassifier(testInstances)
             prediction = evaluationInfo.predictions[0] #.predictions().get(0);
-            ci = ClassificationItem((int) prediction.actual(), ((NominalPrediction) prediction).distribution());
-            return ci.getProbabilities()[analyzedDatasets.getMinorityClassIndex()];
-        }
-        catch (Exception ex) {
-            LOGGER.warn("oa working on " + oa.getName());
+            ci = ClassificationItem(prediction.actual(), prediction.distribution())
+            return ci.getProbabilities()[analyzedDatasets.getMinorityClassIndex()]
 
-            LOGGER.error("FilterPreRankerEvaluator.produceScore -> Error in ML score generation : " + ex.getMessage());
-            return -1;
+        except Exception as ex:
+            Logger.Warn("oa working on " + oa.getName())
+
+            Logger.Error("FilterPreRankerEvaluator.produceScore -> Error in ML score generation : " + str(ex))
+            return -1

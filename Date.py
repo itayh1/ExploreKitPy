@@ -1,5 +1,5 @@
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 class Date:
 
@@ -9,7 +9,13 @@ class Date:
     def getSeconds(self) -> int:
         return self.time.second.real
 
-    def __sub__(self, other):
+    def getHours(self) -> int:
+        return self.time.hour.real
+
+    def getMinutes(self) -> int:
+        return self.time.minute.real
+
+    def __sub__(self, other) -> timedelta:
         return self.time - other.time
 
     def __str__(self):
