@@ -19,16 +19,16 @@ class OperatorAssignment:
     def getName(self) -> str:
         sb = ''
         sb += '{Sources:['
-        for sCI in self.sourceColumns:
-            sb += sCI.getName()
-            sb += ','
+        sb += ','.join([sCI.name for sCI in self.sourceColumns])
+            # sb += sCI.name
+            # sb += ','
         sb += '];'
         sb += 'Targets:['
         if self.targetColumns != None:
-            for tCI in self.targetColumns:
-                sb += tCI.getName()
-                sb += ','
-
+            sb += ','.join([sCI.name for sCI in self.targetColumns])
+            # for tCI in self.targetColumns:
+                # sb += tCI.name
+                # sb += ','
         sb += '];'
         sb += self.operator.getName()
         if self.secondaryOperator != None:
@@ -36,7 +36,7 @@ class OperatorAssignment:
             sb += self.secondaryOperator.getName()
 
         sb += '}'
-        return sb.toString()
+        return sb
 
     def getOperator(self):
         return self.operator

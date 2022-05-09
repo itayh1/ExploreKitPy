@@ -522,7 +522,7 @@ class OperatorsAssignmentsManager:
                         ci2 = uOperator.generate(replica, tempList, None, True)
                         ci = ci2
 
-                    except:
+                    except Exception as ex:
                         pass
 
                 if finalAttribute and writeToFile:

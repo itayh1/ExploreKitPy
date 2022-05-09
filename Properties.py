@@ -11,11 +11,11 @@ class Properties:
     rankerApproach='FilterScoreWithExclusionsRanker'
     classifier='RandomForest'
     unaryOperators='StandardScoreUnaryOperator,EqualRangeDiscretizerUnaryOperator,HourOfDayUnaryOperator,DayOfWeekUnaryOperator,IsWeekendUnaryOperator'
-    nonUnaryOperators='AddBinaryOperator,\
-    DivisionBinaryOperator,MultiplyBinaryOperator,SubtractBinaryOperator,GroupByThenAvg,GroupByThenStdev,GroupByThenCount,GroupByThenMax,GroupByThenMin,\
-    TimeBasedGroupByThenCountAndAvg_180,TimeBasedGroupByThenCountAndCount_180,TimeBasedGroupByThenCountAndMax_180,TimeBasedGroupByThenCountAndMin_180,\
-    TimeBasedGroupByThenCountAndStdev_180,TimeBasedGroupByThenCountAndAvg_1440,TimeBasedGroupByThenCountAndCount_1440,TimeBasedGroupByThenCountAndMax_1440,\
-    TimeBasedGroupByThenCountAndMin_1440,TimeBasedGroupByThenCountAndStdev_1440'
+    nonUnaryOperators='AddBinaryOperator' #,\
+    # DivisionBinaryOperator,MultiplyBinaryOperator,SubtractBinaryOperator,GroupByThenAvg,GroupByThenStdev,GroupByThenCount,GroupByThenMax,GroupByThenMin,\
+    # TimeBasedGroupByThenCountAndAvg_180,TimeBasedGroupByThenCountAndCount_180,TimeBasedGroupByThenCountAndMax_180,TimeBasedGroupByThenCountAndMin_180,\
+    # TimeBasedGroupByThenCountAndStdev_180,TimeBasedGroupByThenCountAndAvg_1440,TimeBasedGroupByThenCountAndCount_1440,TimeBasedGroupByThenCountAndMax_1440,\
+    # TimeBasedGroupByThenCountAndMin_1440,TimeBasedGroupByThenCountAndStdev_1440'
     resultsFilePath='C:/workspace/data/results/'
     maxNumOfAttsInOperatorSource=2
     writeAttributesToFile=False

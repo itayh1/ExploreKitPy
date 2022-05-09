@@ -1,34 +1,24 @@
+from typing import List
+
+import pandas as pd
+
 from Dataset import Dataset
+from OperationAssignmentAncestorsSingleton import OperationAssignmentAncestorsSingleton
 from Operators.BinaryOperator import BinaryOperator
 from Operators.Operator import outputType, operatorType
 
 
 class AddBinaryOperator(BinaryOperator):
 
-    def generate(self, dataset: Dataset, sourceColumns, targetColumns):
-        return sourceColumns + targetColumns
-        # NumericColumn column = new NumericColumn(dataset.getNumOfInstancesPerColumn());
-        #
-        # int numOfRows = dataset.getNumOfTrainingDatasetRows() + dataset.getNumOfTestDatasetRows();
-        # NumericColumn sourceColumn = (NumericColumn)sourceColumns.get(0).getColumn();
-        # NumericColumn targetColumn = (NumericColumn)targetColumns.get(0).getColumn();
-        #
-        # for (int i=0; i<numOfRows; i++) {
-        #     int j = dataset.getIndices().get(i);
-        #     double val = ((double)sourceColumn.getValue(j)) + ((double)targetColumn.getValue(j));
-        #     if (Double.isNaN(val) || Double.isInfinite(val)) {
-        #         column.setValue(j, 0);
-        #     }
-        #     else {
-        #         column.setValue(j, val);
-        #     }
-        # }
-        #
-        # ColumnInfo newColumnInfo = new ColumnInfo(column, sourceColumns, targetColumns, this.getClass(), "Add" + generateName(sourceColumns,targetColumns));
-        # if (enforceDistinctVal && !super.isDistinctValEnforced(dataset,newColumnInfo)) {
-        #     return null;
-        # }
-        # return newColumnInfo;
+    def generate(self, dataset: Dataset, sourceColumns: List[pd.Series], targetColumns):
+        newColumn = sourceColumns[0].add(targetColumns[0], fill_value=0)
+        newColumn.name = 'Add' + self.generateName(sourceColumns, targetColumns)
+        oaAncestors = OperationAssignmentAncestorsSingleton()
+        oaAncestors.addAssignment(newColumn.name, sourceColumns, targetColumns)
+        return newColumn
+
+    def processTrainingSet(self, dataset: Dataset, sourceColumns: pd.Series, targetColumns):
+        pass
 
     def getType(self) -> operatorType:
         return operatorType.Binary

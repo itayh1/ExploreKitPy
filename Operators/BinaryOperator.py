@@ -23,3 +23,6 @@ class BinaryOperator(Operator):
                 Operator.getSeriesType(targetColumns[0]) != outputType.Numeric:
             return False
         return True
+
+    def generateName(self, sourceColumns: List[pd.Series],  targetColumns: List[pd.Series]) -> str:
+        return f"({sourceColumns[0].name};{targetColumns[0].name})"

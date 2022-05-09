@@ -20,7 +20,7 @@ class FilterEvaluator:
                 continue
             discretizer = EqualRangeDiscretizerUnaryOperator(bins)
             discretizer.processTrainingSet(dataset, [col], None)
-            dataset.df[col.name] = discretizer.generate(dataset, col, None)
+            dataset.df[col.name] = discretizer.generate(dataset, [col], None)
         # for (int i=0; i<analyzedColumns.size(); i++) {
         #     ColumnInfo ci = analyzedColumns.get(i);
         #     if (!ci.getColumn().getType().equals(Column.columnType.Discrete)) {

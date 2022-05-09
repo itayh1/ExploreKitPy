@@ -10,8 +10,8 @@ Main
             -IGScores
             -InformationGainFilterEvaluator
             -EqualRangeDiscretizerUnaryOperator
-            -ChiSquareTest/TTest (-> Run till here)
-        -OperatorsAssignmentsManager
+            -ChiSquareTest/TTest
+        -OperatorsAssignmentsManager  (-> Run till here)
             -UnaryOperator (e.g. Discretizer)
             -BinaryOperator (e.g. Add)
             -CombinationGenerator

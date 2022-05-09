@@ -127,7 +127,7 @@ class Dataset:
     # distinct value columns (if they exist)
     def emptyReplica(self):
         emptyDataset = self.df.copy(deep=True)
-        emptyDataset = emptyDataset[self.targetClass]
+        emptyDataset = emptyDataset.loc[:, [self.targetClass]]
         return Dataset(emptyDataset, [], self.targetClass, self.name,
                        self.randomSeed, self.maxNumOfDiscreteValuesForInstancesObject)
 

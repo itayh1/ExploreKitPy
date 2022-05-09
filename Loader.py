@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 from sklearn.model_selection import KFold
 
+from ArffManager import ArffManager
 from Logger import Logger
 from Dataset import Dataset
 from Properties import Properties
@@ -14,8 +15,9 @@ from Fold import Fold
 class Loader:
 
     def readArffAsDataframe(self, filePath: str):
-        data = arff.loadarff(filePath)
-        df = pd.DataFrame(data[0])
+        # data = arff.loadarff(filePath)
+        # df = pd.DataFrame(data[0])
+        df = ArffManager.LoadArff(filePath)
         return df
 
     def readArff(self, filePath: str, randomSeed: int, distinctValIndices: list, classAttIndex: str, trainingSetPercentageOfDataset: float) -> Dataset:
