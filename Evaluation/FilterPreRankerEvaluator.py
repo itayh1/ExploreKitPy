@@ -1,13 +1,11 @@
-from typing import Dict
-
 from AttributeInfo import AttributeInfo
-from ClassificationItem import ClassificationItem
-from ClassificationResults import ClassificationResults
+from Evaluation.ClassificationItem import ClassificationItem
+from Evaluation.ClassificationResults import ClassificationResults
 from Classifier import Classifier
 # from Column import Column
-from Dataset import Dataset
+from Data.Dataset import Dataset
 from DatasetBasedAttributes import DatasetBasedAttributes
-from Logger import Logger
+from Utils.Logger import Logger
 from MLAttributeManager import MLAttributeManager
 from Operators.Operator import outputType
 from OperatorAssignment import OperatorAssignment

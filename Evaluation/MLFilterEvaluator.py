@@ -1,10 +1,8 @@
-import pandas as pd
-
-from DatasetBasedAttributes import DatasetBasedAttributes
-from FilterEvaluator import FilterEvaluator
-from MLAttributeManager import MLAttributeManager
-from Dataset import Dataset
-from Logger import Logger
+from Evaluation.DatasetBasedAttributes import DatasetBasedAttributes
+from Evaluation.FilterEvaluator import FilterEvaluator
+from Evaluation.MLAttributeManager import MLAttributeManager
+from Data.Dataset import Dataset
+from Utils.Logger import Logger
 from Properties import Properties
 
 

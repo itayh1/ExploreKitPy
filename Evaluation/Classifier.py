@@ -1,5 +1,5 @@
-from EvaluationInfo import EvaluationInfo
-from Logger import Logger
+from Evaluation.EvaluationInfo import EvaluationInfo
+from Utils.Logger import Logger
 from Properties import Properties
 
 from sklearn.ensemble import RandomForestClassifier

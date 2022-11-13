@@ -2,14 +2,12 @@ from random import Random
 
 from scipy.io import arff
 import pandas as pd
-import numpy as np
-from sklearn.model_selection import KFold
 
-from ArffManager import ArffManager
-from Logger import Logger
-from Dataset import Dataset
+from Utils.ArffManager import ArffManager
+from Utils.Logger import Logger
+from Data.Dataset import Dataset
 from Properties import Properties
-from Fold import Fold
+from Data.Fold import Fold
 
 
 class Loader:

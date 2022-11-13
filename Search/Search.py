@@ -1,12 +1,12 @@
 import os
 
-from AucWrapperEvaluator import AucWrapperEvaluator
-from Dataset import Dataset
-from Date import Date
-from FilterEvaluator import FilterEvaluator
-from InformationGainFilterEvaluator import InformationGainFilterEvaluator
-from Logger import Logger
-from MLFilterEvaluator import MLFilterEvaluator
+from Evaluation.AucWrapperEvaluator import AucWrapperEvaluator
+from Data.Dataset import Dataset
+from Utils.Date import Date
+from Evaluation.FilterEvaluator import FilterEvaluator
+from Evaluation.InformationGainFilterEvaluator import InformationGainFilterEvaluator
+from Utils.Logger import Logger
+from Evaluation.MLFilterEvaluator import MLFilterEvaluator
 from Properties import Properties
 
 

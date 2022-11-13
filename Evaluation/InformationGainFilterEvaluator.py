@@ -1,11 +1,10 @@
-from typing import Dict, List
+from typing import Dict
 
-import numpy as np
 import pandas as pd
 
-from ClassificationResults import ClassificationResults
-from Dataset import Dataset
-from FilterEvaluator import FilterEvaluator
+from Evaluation.ClassificationResults import ClassificationResults
+from Data.Dataset import Dataset
+from Evaluation.FilterEvaluator import FilterEvaluator
 from OperatorAssignment import OperatorAssignment
 
 import math

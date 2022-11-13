@@ -1,10 +1,8 @@
 
-from Classifier import Classifier
+from Evaluation.Classifier import Classifier
 
 import pandas as pd
-from pandas.api.types import CategoricalDtype
 
-import numpy as np
 from sklearn.model_selection import train_test_split
 
 def main():

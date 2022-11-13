@@ -4,8 +4,8 @@ import pandas as pd
 import numpy as np
 
 from AttributeInfo import AttributeInfo
-from Dataset import Dataset
-from InformationGainFilterEvaluator import InformationGainFilterEvaluator
+from Data.Dataset import Dataset
+from Evaluation.InformationGainFilterEvaluator import InformationGainFilterEvaluator
 from OperatorAssignment import OperatorAssignment
 from Operators import Operator
 

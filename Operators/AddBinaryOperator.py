@@ -2,8 +2,8 @@ from typing import List
 
 import pandas as pd
 
-from Dataset import Dataset
-from OperationAssignmentAncestorsSingleton import OperationAssignmentAncestorsSingleton
+from Data.Dataset import Dataset
+from Evaluation.OperationAssignmentAncestorsSingleton import OperationAssignmentAncestorsSingleton
 from Operators.BinaryOperator import BinaryOperator
 from Operators.Operator import outputType, operatorType
 

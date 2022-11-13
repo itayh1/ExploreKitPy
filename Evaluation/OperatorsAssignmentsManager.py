@@ -3,22 +3,20 @@ from builtins import staticmethod
 from typing import List, Dict
 from itertools import combinations
 
-import Parallel
-from AucWrapperEvaluator import AucWrapperEvaluator
-from ClassificationResults import ClassificationResults
-from Dataset import Dataset
-from Date import Date
-from FilterEvaluator import FilterEvaluator
-from InformationGainFilterEvaluator import InformationGainFilterEvaluator
-from Logger import Logger
-from OperationAssignmentAncestorsSingleton import OperationAssignmentAncestorsSingleton
+from Utils import Parallel
+from Evaluation.AucWrapperEvaluator import AucWrapperEvaluator
+from Evaluation.ClassificationResults import ClassificationResults
+from Data.Dataset import Dataset
+from Evaluation.FilterEvaluator import FilterEvaluator
+from Evaluation.InformationGainFilterEvaluator import InformationGainFilterEvaluator
+from Utils.Logger import Logger
+from Evaluation.OperationAssignmentAncestorsSingleton import OperationAssignmentAncestorsSingleton
 from OperatorAssignment import OperatorAssignment
 from Operators.AddBinaryOperator import AddBinaryOperator
-from Operators.CombinationGenerator import CombinationGenerator
 from Operators.EqualRangeDiscretizerUnaryOperator import EqualRangeDiscretizerUnaryOperator
-from Operators.Operator import Operator, operatorType, outputType
+from Operators.Operator import Operator, operatorType
 from Operators.UnaryOperator import UnaryOperator
-from PreRankerScoreRanker import PreRankerScoreRanker
+from Search.Search import PreRankerScoreRanker
 from Properties import Properties
 
 import pandas as pd

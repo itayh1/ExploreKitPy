@@ -4,14 +4,13 @@ from typing import List
 import numpy as np
 from sklearn.metrics import roc_auc_score
 
-import FileUtils
-from ClassificationItem import ClassificationItem
-from ClassificationResults import ClassificationResults
+from Evaluation.ClassificationItem import ClassificationItem
+from Evaluation.ClassificationResults import ClassificationResults
 from Classifier import Classifier
-from Dataset import Dataset
-from EvaluationInfo import EvaluationInfo
-from Logger import Logger
-from Date import Date
+from Data.Dataset import Dataset
+from Evaluation.EvaluationInfo import EvaluationInfo
+from Utils.Logger import Logger
+from Utils.Date import Date
 from OperatorAssignment import OperatorAssignment
 from Properties import Properties
 

@@ -1,4 +1,0 @@
-
-
-class FileIdentifier:
-    pass

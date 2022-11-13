@@ -1,10 +1,9 @@
 
-from sklearn.model_selection import KFold, StratifiedKFold
+from sklearn.model_selection import KFold
 import  pandas as pd
-import arff
 # from scipy.io import arff
-from FilterWrapperHeuristicSearch import FilterWrapperHeuristicSearch
-from Loader import Loader
+from Search.FilterWrapperHeuristicSearch import FilterWrapperHeuristicSearch
+from Utils.Loader import Loader
 
 def getFolds(df: pd.DataFrame, k: int) -> list:
     #TODO: make it Stratified-KFold

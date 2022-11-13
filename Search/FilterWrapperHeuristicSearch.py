@@ -1,18 +1,18 @@
 
 from typing import List, Tuple, Optional
 
-import Parallel
-from AucWrapperEvaluator import AucWrapperEvaluator
-from ClassificationResults import ClassificationResults
-from Date import Date
-from FilterEvaluator import FilterEvaluator
-from FilterPreRankerEvaluator import FilterPreRankerEvaluator
-from OperatorAssignment import OperatorAssignment
-from OperatorsAssignmentsManager import OperatorsAssignmentsManager
+from Utils import Parallel
+from Evaluation.AucWrapperEvaluator import AucWrapperEvaluator
+from Evaluation.ClassificationResults import ClassificationResults
+from Utils.Date import Date
+from Evaluation.FilterEvaluator import FilterEvaluator
+from Evaluation.FilterPreRankerEvaluator import FilterPreRankerEvaluator
+from Evaluation.OperatorAssignment import OperatorAssignment
+from Evaluation.OperatorsAssignmentsManager import OperatorsAssignmentsManager
 from Properties import Properties
-from MLFilterEvaluator import MLFilterEvaluator
-from Dataset import Dataset
-from Logger import Logger
+from Evaluation.MLFilterEvaluator import MLFilterEvaluator
+from Data.Dataset import Dataset
+from Utils.Logger import Logger
 from Search import Search
 
 

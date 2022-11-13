@@ -1,5 +1,5 @@
 
-from OperationAssignmentAncestorsSingleton import OperationAssignmentAncestorsSingleton
+from Evaluation.OperationAssignmentAncestorsSingleton import OperationAssignmentAncestorsSingleton
 
 def main():
     oaas = OperationAssignmentAncestorsSingleton()

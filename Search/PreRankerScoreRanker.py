@@ -1,8 +1,8 @@
 from typing import List
 
-from ClassificationResults import ClassificationResults
-from Dataset import Dataset
-from OperatorAssignment import OperatorAssignment
+from Evaluation.ClassificationResults import ClassificationResults
+from Data.Dataset import Dataset
+from Evaluation.OperatorAssignment import OperatorAssignment
 
 class PreRankerScoreRanker:
 

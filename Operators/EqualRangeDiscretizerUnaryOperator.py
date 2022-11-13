@@ -3,8 +3,8 @@ from typing import List
 import numpy as np
 import pandas as pd
 
-from Dataset import Dataset
-from Logger import Logger
+from Data.Dataset import Dataset
+from Utils.Logger import Logger
 from Operators.Operator import Operator, operatorType, outputType
 from Operators.UnaryOperator import UnaryOperator
 

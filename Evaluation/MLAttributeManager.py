@@ -2,25 +2,24 @@ import errno
 import os.path
 from typing import Dict, List
 
-import FileUtils
+from Utils import FileUtils
 
-from ArffManager import ArffManager
+from Utils.ArffManager import ArffManager
 from AttributeInfo import AttributeInfo
 from Classifier import Classifier
 # from Column import Column
-from Dataset import Dataset
+from Data.Dataset import Dataset
 from DatasetBasedAttributes import DatasetBasedAttributes
-from Date import Date
-from EvaluationInfo import EvaluationInfo
-from FileUtils import listFilesInDir
-from Loader import Loader
-from Logger import Logger
+from Utils.Date import Date
+from Evaluation.EvaluationInfo import EvaluationInfo
+from Utils.Loader import Loader
+from Utils.Logger import Logger
 from OperatorAssignment import OperatorAssignment
 from Operators import Operator
 from OperatorAssignmentBasedAttributes import OperatorAssignmentBasedAttributes
 from OperatorsAssignmentsManager import OperatorsAssignmentsManager
 from Properties import Properties
-from Serializer import Serializer
+from Utils.Serializer import Serializer
 
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import roc_auc_score
@@ -220,7 +219,7 @@ class MLAttributeManager:
                     arffToAppendFrom = fileName
 
                 mainFile = targetFile + '.arff'
-                FileUtils.renameFile(mainFile, directoryForDataset + seperator + classifier + "_" + metadataType + "_candidateAttributesData" +  '.arff')
+                FileUtils.renameFile(mainFile, directoryForDataset + seperator + classifier + "_" + metadataType + "_candidateAttributesData" + '.arff')
 
     def getBackgroundFilePath(self, dataset: Dataset, includeValueBased: bool):
         backgroundFilePath = ''

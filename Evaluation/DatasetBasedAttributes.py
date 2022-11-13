@@ -5,14 +5,14 @@ import scipy
 import scipy.stats
 
 from AttributeInfo import AttributeInfo
-from AucWrapperEvaluator import AucWrapperEvaluator
+from Evaluation.AucWrapperEvaluator import AucWrapperEvaluator
 # from Column import Column
-from Dataset import Dataset
+from Data.Dataset import Dataset
 from Operators import Operator
 from Operators.EqualRangeDiscretizerUnaryOperator import EqualRangeDiscretizerUnaryOperator
 # from FilterWrapperHeuristicSearch import FilterWrapperHeuristicSearch
 from InformationGainFilterEvaluator import InformationGainFilterEvaluator
-from Logger import Logger
+from Utils.Logger import Logger
 from Properties import Properties
 
 

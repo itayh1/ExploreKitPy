@@ -1,7 +1,7 @@
 import pandas as pd
 
-from ClassificationResults import ClassificationResults
-from Dataset import Dataset
+from Evaluation.ClassificationResults import ClassificationResults
+from Data.Dataset import Dataset
 from OperatorAssignment import OperatorAssignment
 from Operators.EqualRangeDiscretizerUnaryOperator import EqualRangeDiscretizerUnaryOperator
 

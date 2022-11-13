@@ -1,5 +1,5 @@
-from Loader import Loader
-from DatasetBasedAttributes import DatasetBasedAttributes
+from Utils.Loader import Loader
+from Evaluation.DatasetBasedAttributes import DatasetBasedAttributes
 from Properties import Properties
 
 if __name__=='__main__':
