@@ -25,8 +25,8 @@ class Properties:
     classifiersForMLAttributesGeneration='RandomForest'
     #/home/itay/Documents/java/ExploreKit/AutomaticFeatureGeneration-master/ML_Background
     # /home/itay/Documents/EKpy/ML_Background
-    DatasetInstancesFilesLocation='/home/itay/Documents/EKpy/ML_Background/Candidate_attributes/'
-    backgroundClassifierLocation='/home/itay/Documents/EKpy/ML_Background/Background_classifiers_and_arffs/'
+    DatasetInstancesFilesLocation='ML_Background/Candidate_attributes/'
+    backgroundClassifierLocation='ML_Background/Background_classifiers_and_arffs/'
     originalBackgroundDatasetsLocation='/home/itay/Documents/EKpy/ML_Background/DatasetsForMetaModel/'
     preRankedAttributesToGenerate=50000
     usePreRanker=False

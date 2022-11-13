@@ -81,7 +81,7 @@ class MLFilterEvaluator(FilterEvaluator):
 
     def recalculateDatasetBasedFeatures(self,  analyzedDatasets: Dataset):
         dba = DatasetBasedAttributes()
-        datasetAttributes = dba.getDatasetBasedFeatures(analyzedDatasets, Properties.classifier)
+        self.datasetAttributes = dba.getDatasetBasedFeatures(analyzedDatasets, Properties.classifier)
 
     def needToRecalculateScoreAtEachIteration(self) -> bool:
         return True

@@ -11,6 +11,7 @@ class Classifier:
     def __init__(self, classifier: str):
         if classifier == 'RandomForest':
             self.cls = RandomForestClassifier(random_state=Properties.randomSeed)
+            self.classLabel = ''
         else:
             msg = f'Unknown classifier: {classifier}'
             Logger.Error(msg)
@@ -19,17 +20,18 @@ class Classifier:
         self.categoricalColumnsMap: dict
 
     def buildClassifier(self, trainingSet: pd.DataFrame):
-        X = trainingSet.drop(labels=['class'], axis=1)
+        self.classLabel = 'class' if 'class' in trainingSet.columns else trainingSet.columns[-1]
+        X = trainingSet.drop(labels=[self.classLabel], axis=1)
 
         self._saveValuesOfCategoricalColumns(X)
 
         X = pd.get_dummies(X)
 
-        y = trainingSet['class']
+        y = trainingSet[self.classLabel]
         self.cls.fit(X, y)
 
     def evaluateClassifier(self, testSet: pd.DataFrame) -> EvaluationInfo:
-        X = testSet.drop(labels=['class'], axis=1)
+        X = testSet.drop(labels=[self.classLabel], axis=1)
 
         X = self._getDataframeWithCategoricalColumns(X)
 
@@ -38,7 +40,7 @@ class Classifier:
         # Returns ndarray of shape (n_samples, n_classes)
         scoresDist = self.cls.predict_proba(X)
 
-        return EvaluationInfo(self.cls, scoresDist, testSet['class'])
+        return EvaluationInfo(self.cls, scoresDist, testSet[self.classLabel])
 
     # Returns 2 lists, first is the the true/actual values and the second one is the predictions
     def predictClassifier(self, testSet: pd.DataFrame):

@@ -4,18 +4,6 @@ from pandas import CategoricalDtype
 
 
 class ArffManager:
-    def __init__(self):
-        pass
-
-    def setFile(self, mergedFile):
-        pass
-
-    def writeBatch(self):
-        pass
-
-    def setInstances(self, toMerge):
-        pass
-
     @staticmethod
     def SaveArff(arffFilename: str, df: pd.DataFrame, relation: str):
         attributes = [

@@ -65,13 +65,11 @@ class MLAttributeManager:
             data = self.getInstancesFromARFF(backgroundFilePath)
             return self.buildClassifierModel(backgroundFilePath, data)
 
-    def getInstancesFromARFF(self, backgroundFilePath: str):
-        # BufferedReader reader = new BufferedReader(new FileReader(backgroundFilePath + ".arff"));
+    def getInstancesFromARFF(self, backgroundFilePath: str) -> pd.DataFrame:
         data = Loader().readArffAsDataframe(backgroundFilePath + '.arff')
+        lastColName = data.columns[-1]
+        data.rename(columns={lastColName: 'class'}, inplace=True)
         Logger.Info('reading from file ' + backgroundFilePath + '.arff')
-        # ArffLoader.ArffReader arffReader = new ArffLoader.ArffReader(reader);
-        # Instances data = arffReader.getData();
-        # data.setClassIndex(data.numAttributes() - 1);
         return data
 
     def buildClassifierModel(self, backgroundFilePath: str, data):
@@ -80,7 +78,7 @@ class MLAttributeManager:
         # classifier.setNumExecutionSlots(Integer.parseInt(properties.getProperty("numOfThreads")));
 
         # classifier.buildClassifier(data);
-        classifier.fit(data.drop(['class']), data['class'])
+        classifier.fit(data.drop(['class'], axis=1), data['class'])
         file = backgroundFilePath + '.arff'
         FileUtils.deleteFile(file)
 
@@ -100,13 +98,13 @@ class MLAttributeManager:
 
                 merged = self.getMergedFile(candidateAttrDirectory,includeValueBased)
                 if merged is not None:
-                    MLAttributeManager.addArffFileContentToTargetFile(backgroundFilePath, merged[0].getAbsolutePath(),addHeader)
+                    MLAttributeManager.addArffFileContentToTargetFile(backgroundFilePath, FileUtils.getAbsPath(merged[0]), addHeader)
                     addHeader = False
 
                 else:
                     instances = [] #List<Instances> instances = new ArrayList<>();
-                    for file in listFilesInDir(candidateAttrDirectory):
-                        if (file.contains('.arff') and not(not includeValueBased and file.contains(self.VALUES_BASED)) and not(file.contains('merged'))):
+                    for file in FileUtils.listFilesInDir(candidateAttrDirectory):
+                        if (('.arff' in file) and not(not includeValueBased and file.contains(self.VALUES_BASED)) and not('merged' in file)):
                             absFilePath = os.path.abspath(file)
                             instance = Loader().readArffAsDataframe(absFilePath)
                             instances.append(instance)
@@ -114,13 +112,13 @@ class MLAttributeManager:
                         else:
                             Logger.Info(f'Skipping file: {file}')
 
-                    mergedFile = self.mergeInstancesToFile(includeValueBased, candidateAttrDirectory, instances)
+                    mergedFile = self.mergeInstancesToFile(includeValueBased, candidateAttrDirectory, instances, dataset.name)
                     if mergedFile is None:
                         continue
                     self.addArffFileContentToTargetFile(backgroundFilePath, FileUtils.getAbsPath(mergedFile), addHeader)
                     addHeader = False
 
-    def mergeInstancesToFile(self, includeValueBased: bool, directory: str, instances: list):
+    def mergeInstancesToFile(self, includeValueBased: bool, directory: str, instances: list, datasetName: str):
         if len(instances) == 0:
             return None
 
@@ -128,16 +126,12 @@ class MLAttributeManager:
         for i in range(1, len(instances)):
             toMerge = self.mergeDataframes(toMerge, instances[i]) #Instances.mergeInstances(toMerge, instances.get(i));
 
-        saver = ArffManager()
-        saver.setInstances(toMerge)
-
         if includeValueBased:
             mergedFile = os.path.join(directory, self.MERGED_ALL + '.arff')
         else:
             mergedFile = os.path.join(directory, self.MERGED_NO_VALUE + '.arff')
 
-        saver.setFile(mergedFile)
-        saver.writeBatch()
+        ArffManager.SaveArff(mergedFile, toMerge, datasetName)
         return mergedFile
 
     # TODO: replace 'mergeInstances' built-in function
@@ -146,13 +140,13 @@ class MLAttributeManager:
 
     def getMergedFile(self, directory: str, includeValueBased:bool):
         if includeValueBased:
-            merged = filter(lambda name: name.contains(self.MERGED_ALL), listFilesInDir(directory))
+            merged = filter(lambda name: self.MERGED_ALL in name, FileUtils.listFilesInDir(directory))
             merged = list(merged)
             if len(merged) == 1:
                 return merged
 
         if not includeValueBased:
-            filter(lambda name: name.contains(self.MERGED_NO_VALUE), listFilesInDir(directory))
+            merged = list(filter(lambda name: self.MERGED_NO_VALUE in name, FileUtils.listFilesInDir(directory)))
             if len(merged) == 1:
                 return merged
 
@@ -175,6 +169,8 @@ class MLAttributeManager:
             break
         if (directories is None) or (len(directories) == 0):
             raise Exception('getBackgroundClassificationModel -> no directories for meta feature instances')
+        if folder not in directories[0]:
+            directories = [os.path.join(folder, directory) for directory in directories]
         return directories
 
     # Receives a dataset object and generates an Instance object that contains a set of attributes for EACH candidate attribute
@@ -605,7 +601,7 @@ class MLAttributeManager:
     @staticmethod
     def addArffFileContentToTargetFile(targetFilePath: str, arffFilePath: str, addHeader: bool):
         targetFilePath += ".arff"
-        fileReader =  open(arffFilePath, 'r')
+        fileReader = open(arffFilePath, 'r')
         if addHeader:
             fileWriter = open(targetFilePath, 'w')
         else:
@@ -613,19 +609,18 @@ class MLAttributeManager:
 
         foundData = False
         line = fileReader.readline()
-
         while line:
             if addHeader:
                 fileWriter.write(line + '\n')
             else:
-                if not foundData and (line.lower().find("@data") != -1):
+                if (not foundData) and (line.lower().find("@data") != -1):
                     foundData = True
                     line = fileReader.readline()
                 if foundData:
                     fileWriter.write(line + '\n')
+            line = fileReader.readline()
 
         fileReader.close()
-        fileWriter.flush()
         fileWriter.close()
 
     # An overload, used to apply the generateValuesMatrix function for a single sample
@@ -635,14 +630,15 @@ class MLAttributeManager:
         return self._generateValuesMatrix([datasetAttributeValues], 0)
 
     # Creates a data matrix from a HashMap of AttributeInfo objects.
-    def _generateValuesMatrix(self, datasetAttributeValues: List[Dict[int, AttributeInfo]], startIndex: int):
+    def _generateValuesMatrix(self, datasetAttributeValues: List[Dict[int, AttributeInfo]], startIndex: int) -> pd.DataFrame:
         # attributes = self.generateAttributes(datasetAttributeValues[0] , startIndex)
 
         attributesMatrix = []
         for attValues in datasetAttributeValues:
             singleAttValues = [attValue.value for attValue in attValues.values()]
             attributesMatrix.append(singleAttValues)
-        df = pd.DataFrame(np.asarray(attributesMatrix), columns=datasetAttributeValues[0].keys())
+        columns = [str(int(key) + startIndex) for key in datasetAttributeValues[0].keys()]
+        df = pd.DataFrame(np.asarray(attributesMatrix), columns=columns)
         return df
         # Instances finalSet = new Instances("trainingSet", attributes, 0);
         # for (TreeMap<Integer,AttributeInfo> attValues : datasetAttributeValues) {

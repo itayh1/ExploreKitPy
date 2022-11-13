@@ -18,7 +18,7 @@ def get_dataframe_by_attrs(data, attributes):
     return df
 
 def test_load():
-    # raw_data = loadarff('../ML_Background/Datasets/diabetes.arff')
+    # raw_data = loadarff('../ML_Background/Datasets/diabetes_old.arff')
     # raw_data = loadarff('../ML_Background/Datasets/german_credit.arff')
 
     data = arff.load(open('../ML_Background/Datasets/german_credit.arff','r'))

@@ -119,7 +119,8 @@ class AucWrapperEvaluator:
          # classificationItems = []
          probs = evaluation.getScoreDistribution()
          classes = evaluation.getEvaluationStats().classes_
-         classificationItems = [ClassificationItem(classIndex, dict(zip(classes, prob))) for classIndex, prob in zip(testSet['class'].values, probs)]
+         classLabel = 'class' if 'class' in testSet.columns else testSet.columns[-1]
+         classificationItems = [ClassificationItem(classIndex, dict(zip(classes, prob))) for classIndex, prob in zip(testSet[classLabel].values, probs)]
          # for i in range(testSet.shape[0]):
          #     classificationItems.append(ClassificationItem(testSet.iloc[i], dict(zip(classes, probs[i]))))
          return classificationItems

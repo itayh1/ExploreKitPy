@@ -11,7 +11,7 @@ if the dir doesn't exit, return None
 def listFilesInDir(directory: str) -> list:
     if not isdir(directory):
         return None
-    files = [f for f in listdir(directory) if isfile(join(directory, f))]
+    files = [join(directory, f) for f in listdir(directory) if isfile(join(directory, f))]
     return files
 
 def deleteFile(filePath: str):

@@ -25,7 +25,7 @@ def main():
     # datasets.add("/global/home/users/giladk/Datasets/contraceptive.arff");
     # datasets.add("/global/home/users/giladk/Datasets/credit.arff");
     datasets.append("german_credit.arff")
-    # datasets.add("/global/home/users/giladk/Datasets/diabetes.arff");
+    # datasets.add("/global/home/users/giladk/Datasets/diabetes_old.arff");
     # datasets.add("/global/home/users/giladk/Datasets/Diabetic_Retinopathy_Debrecen.arff");
     # datasets.add("/global/home/users/giladk/Datasets/horse-colic.arff");
     # datasets.add("/global/home/users/giladk/Datasets/Indian_Liver_Patient_Dataset.arff");

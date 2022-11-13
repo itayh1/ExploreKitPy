@@ -207,7 +207,7 @@ class OperatorsAssignmentsManager:
                         operatorsAssignments.append(os)
 
                     # now we pair the source attributes with a target attribute and check again
-                    for targetColumnName, targetColumn in dataset.getAllColumns(False).iteritems():
+                    for targetColumnName, targetColumn in dataset.getAllColumns(False).items():
                         # if (sources.contains(targetColumn)) { continue; }
                         if OperatorsAssignmentsManager.overlapExistsBetweenSourceAndTargetAttributes(sources,targetColumn): continue
                         tempList = []

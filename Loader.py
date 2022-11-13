@@ -14,7 +14,7 @@ from Fold import Fold
 
 class Loader:
 
-    def readArffAsDataframe(self, filePath: str):
+    def readArffAsDataframe(self, filePath: str) -> pd.DataFrame:
         # data = arff.loadarff(filePath)
         # df = pd.DataFrame(data[0])
         df = ArffManager.LoadArff(filePath)
