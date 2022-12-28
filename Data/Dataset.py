@@ -49,6 +49,18 @@ class Dataset:
             columns = self.df.columns.drop(self.targetClass)
         return self.df[columns]
 
+    # Returns all the columns of a specified type
+    def getAllColumnsOfType(self, columnTypePredicate, includeTargetColumn: bool) -> List[pd.Series]:
+        columnsToReturn = []
+        for _, ci in self.df.iteritems():
+            if columnTypePredicate(ci):
+                if ci.name == self.getTargetClassColumn().name:
+                    if includeTargetColumn:
+                        columnsToReturn.append(ci)
+                else:
+                    columnsToReturn.append(ci)
+        return columnsToReturn
+
     # return list of types('columnName', dtype)
     def getColumnsDtypes(self, includeTargetColumn: bool):
         if includeTargetColumn:

@@ -2,20 +2,24 @@ from typing import Dict, List
 
 import pandas as pd
 import numpy as np
+from scipy.stats import chi2_contingency, ttest_rel
 
 from AttributeInfo import AttributeInfo
 from Data.Dataset import Dataset
 from Evaluation.InformationGainFilterEvaluator import InformationGainFilterEvaluator
+from Evaluation.StatisticOperations import StatisticOperations
 from OperatorAssignment import OperatorAssignment
 from Operators import Operator
+from Operators.UnaryOperator import UnaryOperator
+
 
 class OperatorAssignmentBasedAttributes:
 
     def __init__(self):
         self.numOfSources: int
         self.numOfNumericSources: int
-        self.numOfDiscreteSources: int
-        self.numOfDateSources: int
+        self.numOfDiscreteSources: int = 0
+        self.numOfDateSources: int = 0
         self.operatorTypeIdentifier: int # The type of the operator: unary, binary etc.
         self.operatorIdentifier: int
         self.discretizerInUse: int # 0 if none is used, otherwise the type of the discretizer (enumerated) TODO: check if this is applies before or after the operator itself
@@ -62,7 +66,7 @@ class OperatorAssignmentBasedAttributes:
 
         self.IGScore: float
 
-        # If the generated attribute is numeric, calculate the Paired T-Test statistics for it and the datasets's numeric attributes
+        # If the generated attribute is numeric, calculate the Paired T-Test statistics for it and the dataset's numeric attributes
         self.maxPairedTTestValuesForGeneratedAttributeAndDatasetNumericAttributes: float = -1
         self.minPairedTTestValuesForGeneratedAttributeAndDatasetNumericAttributes: float = -1
         self.avgPairedTTestValuesForGeneratedAttributeAndDatasetNumericAttributes: float = -1
@@ -74,7 +78,7 @@ class OperatorAssignmentBasedAttributes:
         self.avgChiSquaredTestValuesForGeneratedAttributeAndDatasetDiscreteAttributes: float
         self.stdevChiSquaredTestValuesForGeneratedAttributeAndDatasetDiscreteAttributes: float
 
-        # the Chi-Squared test of the (discretized if needed) generate attribute and ALL of the dataset's attributes (discrete and numeric)
+        # the Chi-Squared test of the (discretized if needed) generate attribute and ALL the dataset's attributes (discrete and numeric)
         self.maxChiSquaredTestValuesForGeneratedAttributeAndAllDatasetAttributes: float
         self.minChiSquaredTestValuesForGeneratedAttributeAndAllDatasetAttributes: float
         self.avgChiSquaredTestValuesForGeneratedAttributeAndAllDatasetAttributes: float
@@ -82,9 +86,20 @@ class OperatorAssignmentBasedAttributes:
 
         ##########################################################################
 
-        self.probDiffScoreForTopMiscallasiffiedInstancesInMinorityClass: Dict[float, float]
-        self.probDiffScoreForTopMiscallasiffiedInstancesInMajorityClass: Dict[float, float]
+        # self.probDiffScoreForTopMiscallasiffiedInstancesInMinorityClass: Dict[float, float]
+        # self.probDiffScoreForTopMiscallasiffiedInstancesInMajorityClass: Dict[float, float]
 
+
+    def _is_column_numeric(self, col: pd.Series):
+        return pd.api.types.is_float_dtype(col)
+
+    def _is_column_discrete(self, col: pd.Series):
+        return pd.api.types.is_integer_dtype(col)
+
+    def _is_series_in_list(self, columns: List[pd.Series], column: pd.Series) -> bool:
+        if columns == None:
+            return False
+        return any(column.name == col.name for col in columns)
 
     # Generates the meta-feautres for the "parents" of the generated attribute. These are the meta-features that DO NOT require
     # calculating the values of the generated attribute to be calculated
@@ -92,22 +107,22 @@ class OperatorAssignmentBasedAttributes:
         try:
             # Calling the procedures that calculate the attributes of the OperatorAssignment obejct and the source and target attribtues
             try:
-                self.processOperatorAssignment(dataset, oa)
+                self._ProcessOperatorAssignment(dataset, oa)
             except Exception as ex:
                 x=5
 
             try:
-                self.processSourceAndTargetAttributes(dataset, oa)
+                self._processSourceAndTargetAttributes(dataset, oa)
             except Exception as ex:
                 x = 5
 
             try:
-                self.performStatisticalTestsOnSourceAndTargetAttributes(dataset, oa)
+                self._performStatisticalTestsOnSourceAndTargetAttributes(dataset, oa)
             except Exception as ex:
                 x = 5
 
             try:
-                self.performStatisticalTestOnOperatorAssignmentAndDatasetAtributes(dataset, oa)
+                self._performStatisticalTestOnOperatorAssignmentAndDatasetAtributes(dataset, oa)
             except Exception as ex:
                 x = 5
 
@@ -216,7 +231,7 @@ class OperatorAssignmentBasedAttributes:
 
         # The paired T-Tests for the dataset's numeric attributes
         if Operator.Operator.getSeriesType(generatedAttribute) == Operator.outputType.Numeric:
-            pairedTTestScores = statisticOperations.calculatePairedTTestValues(filterOperatorAssignmentAttributes(numericColumns, oa), generatedAttribute)
+            pairedTTestScores = StatisticOperations.calculatePairedTTestValues(self._filterOperatorAssignmentAttributes(numericColumns, oa), generatedAttribute)
             if len(pairedTTestScores) > 0:
                 self.maxPairedTTestValuesForGeneratedAttributeAndDatasetNumericAttributes = np.max(pairedTTestScores)
                 self.minPairedTTestValuesForGeneratedAttributeAndDatasetNumericAttributes = np.min(pairedTTestScores)
@@ -229,7 +244,7 @@ class OperatorAssignmentBasedAttributes:
                 self.stdevPairedTTestValuesForGeneratedAttributeAndDatasetNumericAttributes = 0
 
         # The chi Squared test for the dataset's dicrete attribtues
-        chiSquareTestsScores = statisticOperations.calculateChiSquareTestValues(filterOperatorAssignmentAttributes(discreteColumns,oa),generatedAttribute,dataset)
+        chiSquareTestsScores = StatisticOperations.calculateChiSquareTestValues(self._filterOperatorAssignmentAttributes(discreteColumns,oa),generatedAttribute,dataset)
         if len(chiSquareTestsScores) > 0:
             self.maxChiSquaredTestValuesForGeneratedAttributeAndDatasetDiscreteAttributes = np.max(chiSquareTestsScores)
             self.minChiSquaredTestValuesForGeneratedAttributeAndDatasetDiscreteAttributes = np.min(chiSquareTestsScores)
@@ -243,7 +258,7 @@ class OperatorAssignmentBasedAttributes:
 
         # The Chi Square test for ALL the dataset's attirbutes (Numeric attributes will be discretized)
         discreteColumns.extend(numericColumns)
-        AllAttributesChiSquareTestsScores = statisticOperations.calculateChiSquareTestValues(filterOperatorAssignmentAttributes(discreteColumns,oa),generatedAttribute,dataset)
+        AllAttributesChiSquareTestsScores = StatisticOperations.calculateChiSquareTestValues(self._filterOperatorAssignmentAttributes(discreteColumns,oa),generatedAttribute,dataset)
         if len(AllAttributesChiSquareTestsScores) > 0:
             self.maxChiSquaredTestValuesForGeneratedAttributeAndAllDatasetAttributes = np.max(AllAttributesChiSquareTestsScores)
             self.minChiSquaredTestValuesForGeneratedAttributeAndAllDatasetAttributes = np.min(AllAttributesChiSquareTestsScores)
@@ -255,9 +270,68 @@ class OperatorAssignmentBasedAttributes:
             self.avgChiSquaredTestValuesForGeneratedAttributeAndAllDatasetAttributes = 0
             self.stdevChiSquaredTestValuesForGeneratedAttributeAndAllDatasetAttributes =  0
 
+    # Receives a list of attirbutes and an OperatorAssignment object. The function filters out the source and target
+    # attribtues of the OperatorAssignmetn from the given list.
+    def _filterOperatorAssignmentAttributes(self, attributesList: List[pd.Series], operatorAssignment: OperatorAssignment) -> List[pd.Series]:
+        listToReturn: List[pd.Series] = []
+        for ci in attributesList:
+            if any(ci.name == col.name for col in operatorAssignment.getSources()):
+                continue
 
+            if operatorAssignment.getTargets() != None and any(ci.name == col.name for col in operatorAssignment.getTargets()):
+                continue
 
-    def getNumOfNewAttributeDiscreteValues(self, oa: OperatorAssignment) -> int:
+            listToReturn.append(ci)
+        return listToReturn
+
+    #region process_operator_no_evaluation
+
+    # Analyzes the characteristics of the OperatorAssignment object - the characteristics of the feature
+    # that make up the object. Here we do not process the analyzed attribute itself.
+    def _ProcessOperatorAssignment(self, dataset: Dataset, oa: OperatorAssignment):
+        # numOfSources
+        if oa.getSources() != None:
+            self.numOfSources = len(oa.getSources())
+        else:
+            self.numOfSources = 0
+
+        # numOfNumericSources + numOfDiscreteSources + numOfDateSources
+        self.numOfNumericSources = 0
+        if oa.getSources() != None:
+            for ci in oa.getSources():
+                if pd.api.types.is_float_dtype(ci):
+                    self.numOfNumericSources += 1
+
+                if pd.api.types.is_integer_dtype(ci):
+                    self.numOfDiscreteSources += 1
+
+                if pd.api.types.is_datetime64_any_dtype(ci):
+                    self.numOfDateSources += 1
+         # operatorType
+        self.operatorTypeIdentifier = self._getOperatorTypeID(oa.getOperator().getType())
+
+         # operatorName
+        self.operatorIdentifier = self._GetOperatorIdentifier(oa.getOperator())
+
+         # isOutputDiscrete
+        if oa.getSecondaryOperator() != None:
+            if ((oa.getSecondaryOperator().getOutputType().equals(Operator.outputType.Discrete))):
+                self.isOutputDiscrete = 1
+            else:
+                self.isOutputDiscrete = 0
+        else:
+            if (oa.getOperator().getOutputType().equals(Operator.outputType.Discrete)):
+                self.isOutputDiscrete = 1
+            else:
+                self.isOutputDiscrete = 0
+
+        self.discretizerInUse = self._getDiscretizerID(oa.getSecondaryOperator())
+
+        self.normalizerInUse = self._getNormalizerID(oa.getSecondaryOperator())
+
+        self.numOfDiscreteValues = self._getNumOfNewAttributeDiscreteValues(oa)
+
+    def _getNumOfNewAttributeDiscreteValues(self, oa: OperatorAssignment) -> int:
         # TODO: the current code assumes that the only way for a generated attribute to have discrete values is to be generated using the Discretizer unary operator. This will have to be modified as we expand the system. Moreover, we will have to see if this can remain in the part of the code that calculates the meta-features without generating the attributes values
 
         if oa.getSecondaryOperator() is not None:
@@ -268,6 +342,237 @@ class OperatorAssignmentBasedAttributes:
             else:
                 # currently the only operators which return a discrete value are the Unary.
                 return (oa.getOperator()).getNumOfBins()
+
+    # Returns an integer that represents the type of the operator in use
+    def _getOperatorTypeID(self, operatorType: Operator.operatorType) -> int:
+        if operatorType == Operator.operatorType.Unary:
+            return 1
+
+        if operatorType == Operator.operatorType.Binary:
+            return 2
+
+        if operatorType == Operator.operatorType.GroupByThen:
+            return 3
+
+        if operatorType == Operator.operatorType.TimeBasedGroupByThen:
+            return 4
+
+        raise Exception("Unrecognized operator type")
+
+    def _GetOperatorIdentifier(self, operator: Operator) -> int:
+        if operator == None:
+            return 0
+
+        op_name = operator.getName()
+        if "_" in op_name:
+            op_name = op_name[0: op_name.indexOf("_")]
+
+        op_mapping = {
+            "EqualRangeDiscretizerUnaryOperator": 1,
+            "DayOfWeekUnaryOperator": 2,
+            "HourOfDayUnaryOperator": 3,
+            "IsWeekendUnaryOperator": 4,
+            "StandardScoreUnaryOperator": 5,
+            "AddBinaryOperator": 6,
+            "DivisionBinaryOperator": 7,
+            "MultiplyBinaryOperator": 8,
+            "SubtractBinaryOperator": 9,
+            "GroupByThenAvg": 10,
+            "GroupByThenCount": 11,
+            "GroupByThenMax": 12,
+            "GroupByThenMin": 13,
+            "GroupByThenStdev": 14,
+            "TimeBasedGroupByThenCountAndAvg": 15,
+            "TimeBasedGroupByThenCountAndCount": 16,
+            "TimeBasedGroupByThenCountAndMax": 17,
+            "TimeBasedGroupByThenCountAndMin": 18,
+            "TimeBasedGroupByThenCountAndStdev": 19
+        }
+        if op_name not in op_mapping.keys():
+            raise Exception("Unidentified operator in use")
+
+        return op_mapping[op_name]
+
+    def _getDiscretizerID(self, uo: UnaryOperator) -> int:
+        if uo == None:
+            return 0
+
+        try:
+            return {
+                "EqualRangeDiscretizerUnaryOperator": 1,
+                "DayOfWeekUnaryOperator": 2,
+                "HourOfDayUnaryOperator": 3,
+                "IsWeekendUnaryOperator": 4
+            }[uo.getName()]
+        except:
+            # we can get here because even if the opertaor is not null, it may be a normalizer and not a discretizer
+            return 0
+
+    def _getNormalizerID(self, uo: UnaryOperator) -> int:
+        if uo == None:
+            return 0
+
+        if uo.getName() == "StandardScoreUnaryOperator":
+             return 1
+        else:
+             return 0
+
+    #endregion
+
+    def _processSourceAndTargetAttributes(self, dataset: Dataset,  oa: OperatorAssignment):
+        # start by computing statistics on the discrete source attributes
+        sourceAttributesValuesList: List[float] = []
+        for sourceAttribute in oa.getSources():
+            if pd.api.types.is_integer_dtype(sourceAttribute):
+                sourceAttributesValuesList.append(sourceAttribute.nunique())
+
+        if len(sourceAttributesValuesList) == 0:
+            self.maxNumOfDiscreteSourceAttribtueValues = 0
+            self.minNumOfDiscreteSourceAttribtueValues = 0
+            self.avgNumOfDiscreteSourceAttribtueValues = 0
+            self.stdevNumOfDiscreteSourceAttribtueValues = 0
+        else:
+            sourceAttributesValuesNd = np.array(sourceAttributesValuesList)
+            self.maxNumOfDiscreteSourceAttribtueValues = sourceAttributesValuesNd.max()
+            self.minNumOfDiscreteSourceAttribtueValues = sourceAttributesValuesNd.min()
+            self.avgNumOfDiscreteSourceAttribtueValues = sourceAttributesValuesNd.mean()
+            self.stdevNumOfDiscreteSourceAttribtueValues = sourceAttributesValuesNd.std()
+
+        # Statistics on numeric target attribute (we currently support a single attribute)
+        if oa.getTargets() == None or not pd.api.types.is_float_dtype(oa.getTargets()[0]):
+            self.maxValueOfNumericTargetAttribute = 0
+            self.minValueOfNumericTargetAttribute = 0
+            self.avgValueOfNumericTargetAttribute = 0
+            self.stdevValueOfNumericTargetAttribute = 0
+        else:
+            numericTargetAttributeValues = oa.getTargets()[0]
+            self.maxValueOfNumericTargetAttribute = numericTargetAttributeValues.max()
+            self.minValueOfNumericTargetAttribute = numericTargetAttributeValues.min()
+            self.avgValueOfNumericTargetAttribute = numericTargetAttributeValues.mean()
+            self.stdevValueOfNumericTargetAttribute = numericTargetAttributeValues.std()
+
+        if not pd.api.types.is_float_dtype(oa.getSources()[0]):
+            self.maxValueOfNumericSourceAttribute = 0
+            self.minValueOfNumericSourceAttribute = 0
+            self.avgValueOfNumericSourceAttribute = 0
+            self.stdevValueOfNumericSourceAttribute = 0
+        else:
+            numericSourceAttributeValues = oa.getSources()[0]
+            self.maxValueOfNumericSourceAttribute = numericSourceAttributeValues.max()
+            self.minValueOfNumericSourceAttribute = numericSourceAttributeValues.min()
+            self.avgValueOfNumericSourceAttribute = numericSourceAttributeValues.mean()
+            self.stdevValueOfNumericSourceAttribute = numericSourceAttributeValues.mean()
+
+    def _performStatisticalTestsOnSourceAndTargetAttributes(self, dataset: Dataset, oa: OperatorAssignment):
+        # Chi Square test for discrete source attributes
+        self.chiSquareTestValueForSourceAttributes = 0
+        if len(oa.getSources()) == 2:
+            if pd.api.types.is_integer_dtype(oa.getSources()[0]) and pd.api.types.is_integer_dtype(oa.getSources()[1]):
+                dc1 = oa.getSources()[0]
+                dc2 = oa.getSources()[1]
+
+                tempVal, p, dof, expected = chi2_contingency(StatisticOperations.generateDiscreteAttributesCategoryIntersection(dc1,dc2))
+                if (not np.isnan(tempVal) and not np.isinf(tempVal)):
+                    self.chiSquareTestValueForSourceAttributes = tempVal
+                else:
+                    self.chiSquareTestValueForSourceAttributes = -1
+
+        # Paired T-Test for numeric source and target
+        self.pairedTTestValueForSourceAndTargetAttirbutes = 0
+        if (len(oa.getSources()) == 1 and pd.api.types.is_float_dtype(oa.getSources()[0]) and oa.getTargets() != None and len(oa.getTargets()) == 1):
+            (statistic, pvalue) = ttest_rel(oa.getSources()[0], oa.getTargets()[0])
+            self.pairedTTestValueForSourceAndTargetAttirbutes = pvalue
+
+        # The chiSquare Test scores of all source and target attribtues (numeric atts are discretized, other non-discrete types are ignored)
+        if (oa.getSources().size() == 1 and oa.getTargets() == None):
+            self.maxChiSquareTsetForSourceAndTargetAttributes = 0
+            self.minChiSquareTsetForSourceAndTargetAttributes = 0
+            self.avgChiSquareTsetForSourceAndTargetAttributes = 0
+            self.stdevChiSquareTsetForSourceAndTargetAttributes = 0
+        else:
+            columnsToAnalyze = []
+            for ci in oa.getSources():
+                if pd.api.types.is_integer_dtype(ci):
+                    columnsToAnalyze.append(ci)
+                else:
+                    if pd.api.types.is_float_dtype(ci):
+                        columnsToAnalyze.append(StatisticOperations.discretizeNumericColumn(dataset, ci, None))
+
+            if len(columnsToAnalyze) > 1:
+                chiSquareTestValues = []
+                for i in range(len(columnsToAnalyze) - 1):
+                    for j in range(i+1, len(columnsToAnalyze)):
+                        chiSquareTestVal, p, dof, expected = chi2_contingency(StatisticOperations.generateDiscreteAttributesCategoryIntersection(
+                                columnsToAnalyze[i], columnsToAnalyze[j]))
+                        if not np.isnan(chiSquareTestVal) and not np.isinf(chiSquareTestVal):
+                            chiSquareTestValues.append(chiSquareTestVal)
+
+                if len(chiSquareTestValues) > 0:
+                    chiSquareTestNd = np.array(chiSquareTestValues)
+                    self.maxChiSquareTsetForSourceAndTargetAttributes = chiSquareTestNd.max()
+                    self.minChiSquareTsetForSourceAndTargetAttributes = chiSquareTestNd.max()
+                    self.avgChiSquareTsetForSourceAndTargetAttributes = chiSquareTestNd.mean()
+                    self.stdevChiSquareTsetForSourceAndTargetAttributes = chiSquareTestNd.std()
+                else:
+                    self.maxChiSquareTsetForSourceAndTargetAttributes = 0
+                    self.minChiSquareTsetForSourceAndTargetAttributes = 0
+                    self.avgChiSquareTsetForSourceAndTargetAttributes = 0
+                    self.stdevChiSquareTsetForSourceAndTargetAttributes = 0
+
+    def _performStatisticalTestOnOperatorAssignmentAndDatasetAtributes(self, dataset: Dataset, oa: OperatorAssignment):
+        # first we put all the OA attributes (sources and targets) in one list. Numeric atts are discretized, other non-discretes are ignored
+        columnsToAnalyze: List[pd.Series] = []
+        for ci in oa.getSources():
+            if pd.api.types.is_integer_dtype(ci):
+                columnsToAnalyze.append(ci)
+            else:
+                if pd.api.types.is_float_dtype(ci):
+                    columnsToAnalyze.append(StatisticOperations.discretizeNumericColumn(dataset, ci, None))
+
+        if oa.getTargets() != None:
+            for ci in oa.getTargets():
+                if pd.api.types.is_integer_dtype(ci):
+                    columnsToAnalyze.append(ci)
+                else:
+                    if pd.api.types.is_float_dtype(ci):
+                        columnsToAnalyze.append(StatisticOperations.discretizeNumericColumn(dataset, ci, None))
+
+        # For each attribute in the list we created, we iterate over all the attributes in the dataset (all those that are not in the OA)
+        chiSquareTestValues: List[float] = []
+        for ci in columnsToAnalyze:
+            for datasetCI in dataset.getAllColumns(False):
+                # if datasetCI is in the OA then skip
+                if self._is_series_in_list(oa.getSources(), datasetCI) or self._is_series_in_list(oa.getTargets(), datasetCI):
+                    continue
+
+                chiSquareTestValue = 0
+                if pd.api.types.is_datetime64_any_dtype(datasetCI) or pd.api.types.is_string_dtype(datasetCI):
+                    continue
+                if self._is_column_discrete(datasetCI):
+                    chiSquareTestValue, p, dof, expected = chi2_contingency(StatisticOperations.generateDiscreteAttributesCategoryIntersection(ci,datasetCI))
+
+                if self._is_column_numeric(datasetCI):
+                    tempCI = StatisticOperations.discretizeNumericColumn(dataset, datasetCI,None)
+                    chiSquareTestValue, p, dof, expected = chi2_contingency(StatisticOperations.generateDiscreteAttributesCategoryIntersection(ci,tempCI))
+
+                if not np.isnan(chiSquareTestValue) and not np.isinf(chiSquareTestValue):
+                    chiSquareTestValues.append(chiSquareTestValue)
+
+        # now we calculate the max/min/avg/stdev
+        if len(chiSquareTestValues) > 0:
+            chiSquareTestValuesNd = np.array(chiSquareTestValues)
+            self.maxChiSquareTestvalueForSourceDatasetAttributes = chiSquareTestValuesNd.max()
+            self.minChiSquareTestvalueForSourceDatasetAttributes = chiSquareTestValuesNd.min()
+            self.avgChiSquareTestvalueForSourceDatasetAttributes = chiSquareTestValuesNd.mean()
+            self.stdevChiSquareTestvalueForSourceDatasetAttributes = np.std(chiSquareTestValuesNd)
+        else:
+            self.maxChiSquareTestvalueForSourceDatasetAttributes = 0
+            self.minChiSquareTestvalueForSourceDatasetAttributes = 0
+            self.avgChiSquareTestvalueForSourceDatasetAttributes = 0
+            self.stdevChiSquareTestvalueForSourceDatasetAttributes = 0
+
+
+
 
 
 

@@ -1,3 +1,5 @@
+from typing import List
+
 import pandas as pd
 
 from Evaluation.ClassificationResults import ClassificationResults
@@ -9,9 +11,9 @@ class FilterEvaluator:
 #     analyzedColumns = []
 
     def __init__(self):
-        self.analyzedColumns: pd.DataFrame = None
+        self.analyzedColumns = None
 
-    def initFilterEvaluator(self, analyzedColumns: pd.DataFrame):
+    def initFilterEvaluator(self, analyzedColumns: List[pd.Series]):
         self.analyzedColumns = analyzedColumns
 
     def discretizeColumns(self, dataset: Dataset, bins: list):

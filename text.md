@@ -2,7 +2,7 @@ EKpy:
 files in DatasetsForMetaModel are the arrfs that we train upon and create 
 from them the candidate features for training.
 
-we go for each dataset and we calculate its features: Dataset based, Value based and OperationAssignment based.
+we go for each dataset and calculate its features: Dataset based, Value based and OperationAssignment based.
 Dataset based: the meta-features for each candidate is the same for all rows in dataset.
 Value based:
 OperationAssignment based:
@@ -18,8 +18,7 @@ for each dataset:
    as Operation Assignments (candidate features that haven't evaluated yet/generated values).
    3. Generate all the meta-features that are Operation assigment based using `OperatorAssignmentBasedAttributes`.
    4. From every operation assignment, generate the column.
-   Generate all the meta-features that are Value based using `OperatorAssignmentBasedAttributes`.
-   5. 
+   5. Generate all the meta-features that are Value based using `OperatorAssignmentBasedAttributes`.
 
 `OperatorAssignmentBasedAttributes` generates meta-features that are "parent dependent" and don't require
 us to generate the values of the new attribute. 
