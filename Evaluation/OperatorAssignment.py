@@ -1,10 +1,12 @@
+from typing import Optional
+
 from Operators.Operator import Operator
 from Operators.UnaryOperator import UnaryOperator
 
 
 class OperatorAssignment:
 
-    def __init__(self, sourceColumns: list, targetColumns: list, operator: Operator, secondaryOperator: UnaryOperator):
+    def __init__(self, sourceColumns: list, targetColumns: list, operator: Operator, secondaryOperator: Optional[UnaryOperator]):
         self.sourceColumns = sourceColumns
         self.targetColumns = targetColumns
         self.operator = operator

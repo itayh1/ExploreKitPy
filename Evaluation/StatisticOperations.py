@@ -6,6 +6,7 @@ from scipy.stats import ttest_rel, chi2_contingency
 
 from Data.Dataset import Dataset
 from Operators.EqualRangeDiscretizerUnaryOperator import EqualRangeDiscretizerUnaryOperator
+from Operators.Operator import Operator, outputType
 from Properties import Properties
 
 
@@ -89,20 +90,21 @@ class StatisticOperations:
     # Used to generate the data structure required to conduct the Chi-Square test on two data columns
     @staticmethod
     def generateDiscreteAttributesCategoryIntersection(col1: pd.Series, col2: pd.Series) -> np.ndarray:
-        col1Values = np.array(col1.getValues())
-        col2Values = np.array(col2.getValues())
+        assert Operator.getSeriesType(col1) != outputType.Numeric
+        assert Operator.getSeriesType(col2) != outputType.Numeric
+        col1Values = col1.to_numpy()
+        col2Values = col2.to_numpy()
 
         if col1Values.shape[0] != col2Values.shape[0]:
             raise Exception("Columns do not have the same number of instances")
 
-        return StatisticOperations._generateChiSuareIntersectionMatrix(col1Values, col1.getNumOfPossibleValues(), col2Values,
-                                                                  col2.getNumOfPossibleValues())
+        return StatisticOperations._generateChiSuareIntersectionMatrix(col1, col2)
 
     @staticmethod
-    def _generateChiSuareIntersectionMatrix(col1Values: np.ndarray, col1NumOfValues: np.ndarray, col2Values: np.ndarray,
-                                           col2NumOfValues: int) -> np.ndarray:
-        intersectionsMatrix = np.zeros((col1NumOfValues, col2NumOfValues), dtype=np.int)
-        for i in range(col1Values.shape[0]):
-            intersectionsMatrix[col1Values[i]][col2Values[i]] += 1
-
-        return intersectionsMatrix
+    def _generateChiSuareIntersectionMatrix(col1: pd.Series, col2: pd.Series) -> np.ndarray:
+        # intersectionsMatrix = np.zeros((col1NumOfValues, col2NumOfValues), dtype=np.int)
+        # for i in range(col1Values.shape[0]):
+        #     intersectionsMatrix[col1Values[i]][col2Values[i]] += 1
+        # return intersectionsMatrix
+        crosstab = pd.crosstab(col1, col2)
+        return crosstab.values

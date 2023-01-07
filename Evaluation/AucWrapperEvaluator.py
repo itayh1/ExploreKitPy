@@ -6,12 +6,12 @@ from sklearn.metrics import roc_auc_score
 
 from Evaluation.ClassificationItem import ClassificationItem
 from Evaluation.ClassificationResults import ClassificationResults
-from Classifier import Classifier
+from Evaluation.Classifier import Classifier
 from Data.Dataset import Dataset
 from Evaluation.EvaluationInfo import EvaluationInfo
 from Utils.Logger import Logger
 from Utils.Date import Date
-from OperatorAssignment import OperatorAssignment
+from Evaluation.OperatorAssignment import OperatorAssignment
 from Properties import Properties
 
 

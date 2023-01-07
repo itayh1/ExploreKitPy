@@ -3,20 +3,19 @@ from builtins import staticmethod
 from typing import List, Dict
 from itertools import combinations
 
-from Utils import Parallel
 from Evaluation.AucWrapperEvaluator import AucWrapperEvaluator
-from Evaluation.ClassificationResults import ClassificationResults
 from Data.Dataset import Dataset
+from Evaluation.ClassificationResults import ClassificationResults
 from Evaluation.FilterEvaluator import FilterEvaluator
 from Evaluation.InformationGainFilterEvaluator import InformationGainFilterEvaluator
-from Utils.Logger import Logger
 from Evaluation.OperationAssignmentAncestorsSingleton import OperationAssignmentAncestorsSingleton
-from OperatorAssignment import OperatorAssignment
+from Evaluation.OperatorAssignment import OperatorAssignment
+from Utils import Parallel
+from Utils.Logger import Logger
 from Operators.AddBinaryOperator import AddBinaryOperator
 from Operators.EqualRangeDiscretizerUnaryOperator import EqualRangeDiscretizerUnaryOperator
 from Operators.Operator import Operator, operatorType
 from Operators.UnaryOperator import UnaryOperator
-from Search.Search import PreRankerScoreRanker
 from Properties import Properties
 
 import pandas as pd

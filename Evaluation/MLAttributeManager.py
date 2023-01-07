@@ -5,19 +5,19 @@ from typing import Dict, List
 from Utils import FileUtils
 
 from Utils.ArffManager import ArffManager
-from AttributeInfo import AttributeInfo
-from Classifier import Classifier
+from Evaluation.AttributeInfo import AttributeInfo
+from Evaluation.Classifier import Classifier
 # from Column import Column
 from Data.Dataset import Dataset
-from DatasetBasedAttributes import DatasetBasedAttributes
+from Evaluation.DatasetBasedAttributes import DatasetBasedAttributes
 from Utils.Date import Date
 from Evaluation.EvaluationInfo import EvaluationInfo
 from Utils.Loader import Loader
 from Utils.Logger import Logger
-from OperatorAssignment import OperatorAssignment
+from Evaluation.OperatorAssignment import OperatorAssignment
 from Operators import Operator
-from OperatorAssignmentBasedAttributes import OperatorAssignmentBasedAttributes
-from OperatorsAssignmentsManager import OperatorsAssignmentsManager
+from Evaluation.OperatorAssignmentBasedAttributes import OperatorAssignmentBasedAttributes
+from Evaluation.OperatorsAssignmentsManager import OperatorsAssignmentsManager
 from Properties import Properties
 from Utils.Serializer import Serializer
 

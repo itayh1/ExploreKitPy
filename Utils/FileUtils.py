@@ -2,7 +2,7 @@
 from os import listdir, remove, rename
 from os.path import isdir, isfile, join, abspath, split
 
-from Logger import Logger
+from Utils.Logger import Logger
 '''
 return list of the files in the directory
 if there's no files, return empty list

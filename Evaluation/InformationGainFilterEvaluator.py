@@ -5,7 +5,7 @@ import pandas as pd
 from Evaluation.ClassificationResults import ClassificationResults
 from Data.Dataset import Dataset
 from Evaluation.FilterEvaluator import FilterEvaluator
-from OperatorAssignment import OperatorAssignment
+from Evaluation.OperatorAssignment import OperatorAssignment
 
 import math
 

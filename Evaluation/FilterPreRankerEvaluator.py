@@ -1,15 +1,15 @@
-from AttributeInfo import AttributeInfo
+from Evaluation.AttributeInfo import AttributeInfo
 from Evaluation.ClassificationItem import ClassificationItem
 from Evaluation.ClassificationResults import ClassificationResults
-from Classifier import Classifier
-# from Column import Column
+from Evaluation.Classifier import Classifier
 from Data.Dataset import Dataset
-from DatasetBasedAttributes import DatasetBasedAttributes
+from Evaluation.DatasetBasedAttributes import DatasetBasedAttributes
 from Utils.Logger import Logger
-from MLAttributeManager import MLAttributeManager
+from Evaluation import MLAttributeManager
+# from Evaluation.MLAttributeManager import MLAttributeManager
 from Operators.Operator import outputType
-from OperatorAssignment import OperatorAssignment
-from OperatorAssignmentBasedAttributes import OperatorAssignmentBasedAttributes
+from Evaluation.OperatorAssignment import OperatorAssignment
+from Evaluation.OperatorAssignmentBasedAttributes import OperatorAssignmentBasedAttributes
 from Properties import Properties
 
 
@@ -22,7 +22,7 @@ class FilterPreRankerEvaluator:
 
     def initializeBackgroundModel(self, dataset: Dataset):
         Logger.Info("Initializing background model for pre-ranking process")
-        mlam = MLAttributeManager()
+        mlam = MLAttributeManager.MLAttributeManager()
         classifier = mlam.getBackgroundClassificationModel(dataset, False)
 
         dba = DatasetBasedAttributes()
@@ -32,7 +32,7 @@ class FilterPreRankerEvaluator:
     def produceScore(self, analyzedDatasets: Dataset,  currentScore: ClassificationResults,
                      completeDataset: Dataset,  oa:OperatorAssignment,  candidateAttribute) -> float:
         try:
-            mlam = MLAttributeManager()
+            mlam = MLAttributeManager.MLAttributeManager()
             if self.classifier == None:
                 Logger.Error("Classifier is not initialized")
                 raise Exception("Classifier is not initialized")

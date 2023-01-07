@@ -4,11 +4,11 @@ import pandas as pd
 import numpy as np
 from scipy.stats import chi2_contingency, ttest_rel
 
-from AttributeInfo import AttributeInfo
+from Evaluation.AttributeInfo import AttributeInfo
 from Data.Dataset import Dataset
 from Evaluation.InformationGainFilterEvaluator import InformationGainFilterEvaluator
 from Evaluation.StatisticOperations import StatisticOperations
-from OperatorAssignment import OperatorAssignment
+from Evaluation.OperatorAssignment import OperatorAssignment
 from Operators import Operator
 from Operators.UnaryOperator import UnaryOperator
 
@@ -96,6 +96,9 @@ class OperatorAssignmentBasedAttributes:
     def _is_column_discrete(self, col: pd.Series):
         return pd.api.types.is_integer_dtype(col)
 
+    def _is_column_date(self, col: pd.Series):
+        return pd.api.types.is_datetime64_any_dtype(col)
+
     def _is_series_in_list(self, columns: List[pd.Series], column: pd.Series) -> bool:
         if columns == None:
             return False
@@ -144,13 +147,13 @@ class OperatorAssignmentBasedAttributes:
                 igfe = InformationGainFilterEvaluator()
                 igfe.initFilterEvaluator(tempList)
                 self.IGScore = igfe.produceScore(datasetReplica, None, dataset, None, None)
-            except Exception:
+            except Exception as ex:
                 x = 5
 
             # Calling the procedures that calculate statistics on the candidate attribute
             try:
                 self.processGeneratedAttribute(dataset, oa, generatedAttribute)
-            except Exception:
+            except Exception as ex:
                 x = 5
 
             return self.generateInstanceAttributesMap(False, True)
@@ -299,13 +302,13 @@ class OperatorAssignmentBasedAttributes:
         self.numOfNumericSources = 0
         if oa.getSources() != None:
             for ci in oa.getSources():
-                if pd.api.types.is_float_dtype(ci):
+                if self._is_column_numeric(ci):
                     self.numOfNumericSources += 1
 
-                if pd.api.types.is_integer_dtype(ci):
+                if self._is_column_discrete(ci):
                     self.numOfDiscreteSources += 1
 
-                if pd.api.types.is_datetime64_any_dtype(ci):
+                if self._is_column_date(ci):
                     self.numOfDateSources += 1
          # operatorType
         self.operatorTypeIdentifier = self._getOperatorTypeID(oa.getOperator().getType())
@@ -320,7 +323,7 @@ class OperatorAssignmentBasedAttributes:
             else:
                 self.isOutputDiscrete = 0
         else:
-            if (oa.getOperator().getOutputType().equals(Operator.outputType.Discrete)):
+            if oa.getOperator().getOutputType() == Operator.outputType.Discrete:
                 self.isOutputDiscrete = 1
             else:
                 self.isOutputDiscrete = 0
@@ -423,7 +426,7 @@ class OperatorAssignmentBasedAttributes:
         # start by computing statistics on the discrete source attributes
         sourceAttributesValuesList: List[float] = []
         for sourceAttribute in oa.getSources():
-            if pd.api.types.is_integer_dtype(sourceAttribute):
+            if self._is_column_discrete(sourceAttribute):
                 sourceAttributesValuesList.append(sourceAttribute.nunique())
 
         if len(sourceAttributesValuesList) == 0:
@@ -439,7 +442,7 @@ class OperatorAssignmentBasedAttributes:
             self.stdevNumOfDiscreteSourceAttribtueValues = sourceAttributesValuesNd.std()
 
         # Statistics on numeric target attribute (we currently support a single attribute)
-        if oa.getTargets() == None or not pd.api.types.is_float_dtype(oa.getTargets()[0]):
+        if oa.getTargets() == None or not self._is_column_numeric(oa.getTargets()[0]):
             self.maxValueOfNumericTargetAttribute = 0
             self.minValueOfNumericTargetAttribute = 0
             self.avgValueOfNumericTargetAttribute = 0
@@ -451,7 +454,7 @@ class OperatorAssignmentBasedAttributes:
             self.avgValueOfNumericTargetAttribute = numericTargetAttributeValues.mean()
             self.stdevValueOfNumericTargetAttribute = numericTargetAttributeValues.std()
 
-        if not pd.api.types.is_float_dtype(oa.getSources()[0]):
+        if not self._is_column_numeric(oa.getSources()[0]):
             self.maxValueOfNumericSourceAttribute = 0
             self.minValueOfNumericSourceAttribute = 0
             self.avgValueOfNumericSourceAttribute = 0
@@ -467,7 +470,7 @@ class OperatorAssignmentBasedAttributes:
         # Chi Square test for discrete source attributes
         self.chiSquareTestValueForSourceAttributes = 0
         if len(oa.getSources()) == 2:
-            if pd.api.types.is_integer_dtype(oa.getSources()[0]) and pd.api.types.is_integer_dtype(oa.getSources()[1]):
+            if self._is_column_discrete(oa.getSources()[0]) and self._is_column_discrete(oa.getSources()[1]):
                 dc1 = oa.getSources()[0]
                 dc2 = oa.getSources()[1]
 
@@ -479,12 +482,12 @@ class OperatorAssignmentBasedAttributes:
 
         # Paired T-Test for numeric source and target
         self.pairedTTestValueForSourceAndTargetAttirbutes = 0
-        if (len(oa.getSources()) == 1 and pd.api.types.is_float_dtype(oa.getSources()[0]) and oa.getTargets() != None and len(oa.getTargets()) == 1):
+        if len(oa.getSources()) == 1 and self._is_column_numeric(oa.getSources()[0]) and oa.getTargets() != None and len(oa.getTargets()) == 1:
             (statistic, pvalue) = ttest_rel(oa.getSources()[0], oa.getTargets()[0])
             self.pairedTTestValueForSourceAndTargetAttirbutes = pvalue
 
         # The chiSquare Test scores of all source and target attribtues (numeric atts are discretized, other non-discrete types are ignored)
-        if (oa.getSources().size() == 1 and oa.getTargets() == None):
+        if len(oa.getSources()) == 1 and oa.getTargets() == None:
             self.maxChiSquareTsetForSourceAndTargetAttributes = 0
             self.minChiSquareTsetForSourceAndTargetAttributes = 0
             self.avgChiSquareTsetForSourceAndTargetAttributes = 0
@@ -492,10 +495,10 @@ class OperatorAssignmentBasedAttributes:
         else:
             columnsToAnalyze = []
             for ci in oa.getSources():
-                if pd.api.types.is_integer_dtype(ci):
+                if self._is_column_discrete(ci):
                     columnsToAnalyze.append(ci)
                 else:
-                    if pd.api.types.is_float_dtype(ci):
+                    if self._is_column_numeric(ci):
                         columnsToAnalyze.append(StatisticOperations.discretizeNumericColumn(dataset, ci, None))
 
             if len(columnsToAnalyze) > 1:
@@ -523,30 +526,30 @@ class OperatorAssignmentBasedAttributes:
         # first we put all the OA attributes (sources and targets) in one list. Numeric atts are discretized, other non-discretes are ignored
         columnsToAnalyze: List[pd.Series] = []
         for ci in oa.getSources():
-            if pd.api.types.is_integer_dtype(ci):
+            if self._is_column_discrete(ci):
                 columnsToAnalyze.append(ci)
             else:
-                if pd.api.types.is_float_dtype(ci):
+                if self._is_column_numeric(ci):
                     columnsToAnalyze.append(StatisticOperations.discretizeNumericColumn(dataset, ci, None))
 
         if oa.getTargets() != None:
             for ci in oa.getTargets():
-                if pd.api.types.is_integer_dtype(ci):
+                if self._is_column_discrete(ci):
                     columnsToAnalyze.append(ci)
                 else:
-                    if pd.api.types.is_float_dtype(ci):
+                    if self._is_column_numeric(ci):
                         columnsToAnalyze.append(StatisticOperations.discretizeNumericColumn(dataset, ci, None))
 
         # For each attribute in the list we created, we iterate over all the attributes in the dataset (all those that are not in the OA)
         chiSquareTestValues: List[float] = []
         for ci in columnsToAnalyze:
-            for datasetCI in dataset.getAllColumns(False):
+            for _, datasetCI in dataset.getAllColumns(False).items():
                 # if datasetCI is in the OA then skip
                 if self._is_series_in_list(oa.getSources(), datasetCI) or self._is_series_in_list(oa.getTargets(), datasetCI):
                     continue
 
                 chiSquareTestValue = 0
-                if pd.api.types.is_datetime64_any_dtype(datasetCI) or pd.api.types.is_string_dtype(datasetCI):
+                if self._is_column_date(datasetCI) or pd.api.types.is_string_dtype(datasetCI):
                     continue
                 if self._is_column_discrete(datasetCI):
                     chiSquareTestValue, p, dof, expected = chi2_contingency(StatisticOperations.generateDiscreteAttributesCategoryIntersection(ci,datasetCI))

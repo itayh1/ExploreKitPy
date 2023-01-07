@@ -7,3 +7,6 @@ class AttributeInfo:
         self.attributeType = attType
         self.value = attValue
         self.numOfDiscreteValues = numOfValues
+
+    def __repr__(self):
+        return f"Name: {self.attributeName}, Type: {self.attributeType}, Value: {self.value}, num_discrete_values: {self.numOfDiscreteValues}"

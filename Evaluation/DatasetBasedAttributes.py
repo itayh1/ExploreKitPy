@@ -4,14 +4,14 @@ import pandas as pd
 import scipy
 import scipy.stats
 
-from AttributeInfo import AttributeInfo
+from Evaluation.AttributeInfo import AttributeInfo
 from Evaluation.AucWrapperEvaluator import AucWrapperEvaluator
 # from Column import Column
 from Data.Dataset import Dataset
 from Operators import Operator
 from Operators.EqualRangeDiscretizerUnaryOperator import EqualRangeDiscretizerUnaryOperator
 # from FilterWrapperHeuristicSearch import FilterWrapperHeuristicSearch
-from InformationGainFilterEvaluator import InformationGainFilterEvaluator
+from Evaluation.InformationGainFilterEvaluator import InformationGainFilterEvaluator
 from Utils.Logger import Logger
 from Properties import Properties
 

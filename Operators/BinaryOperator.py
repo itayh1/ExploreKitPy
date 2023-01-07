@@ -13,7 +13,7 @@ class BinaryOperator(Operator):
         self.abc: List[int]
 
     def getType(self) -> operatorType:
-        return operatorType.Unary
+        return operatorType.Binary
 
     def isApplicable(self, dataset: Dataset, sourceColumns: List[pd.Series], targetColumns: List[pd.Series]) -> bool:
         # if there are any target columns or if there is more than one source column, return false

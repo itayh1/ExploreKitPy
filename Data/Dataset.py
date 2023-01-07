@@ -2,7 +2,7 @@ from typing import List
 
 import numpy as np
 import pandas as pd
-from Fold import Fold
+from Data.Fold import Fold
 
 class Dataset:
 
@@ -52,7 +52,7 @@ class Dataset:
     # Returns all the columns of a specified type
     def getAllColumnsOfType(self, columnTypePredicate, includeTargetColumn: bool) -> List[pd.Series]:
         columnsToReturn = []
-        for _, ci in self.df.iteritems():
+        for _, ci in self.df.items():
             if columnTypePredicate(ci):
                 if ci.name == self.getTargetClassColumn().name:
                     if includeTargetColumn:

@@ -28,6 +28,8 @@ class Operator:
             return outputType.Numeric
         elif pd.api.types.is_datetime64_any_dtype(column):
             return outputType.Date
+        elif pd.api.types.is_object_dtype(column):
+            raise Exception("Can't handle object type columns")
         else:
             raise Exception('Unknown column type')
 

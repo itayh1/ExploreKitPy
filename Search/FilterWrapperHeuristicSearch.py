@@ -13,7 +13,7 @@ from Properties import Properties
 from Evaluation.MLFilterEvaluator import MLFilterEvaluator
 from Data.Dataset import Dataset
 from Utils.Logger import Logger
-from Search import Search
+from Search.Search import Search
 
 
 class FilterWrapperHeuristicSearch(Search):
