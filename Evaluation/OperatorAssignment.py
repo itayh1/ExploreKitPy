@@ -1,7 +1,7 @@
 from typing import Optional
 
 from Operators.Operator import Operator
-from Operators.UnaryOperator import UnaryOperator
+from Operators.UnaryOperators.UnaryOperator import UnaryOperator
 
 
 class OperatorAssignment:

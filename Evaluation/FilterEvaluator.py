@@ -5,7 +5,7 @@ import pandas as pd
 from Evaluation.ClassificationResults import ClassificationResults
 from Data.Dataset import Dataset
 from Evaluation.OperatorAssignment import OperatorAssignment
-from Operators.EqualRangeDiscretizerUnaryOperator import EqualRangeDiscretizerUnaryOperator
+from Operators.UnaryOperators.EqualRangeDiscretizerUnaryOperator import EqualRangeDiscretizerUnaryOperator
 
 class FilterEvaluator:
 #     analyzedColumns = []

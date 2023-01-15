@@ -10,12 +10,17 @@ from Evaluation.FilterEvaluator import FilterEvaluator
 from Evaluation.InformationGainFilterEvaluator import InformationGainFilterEvaluator
 from Evaluation.OperationAssignmentAncestorsSingleton import OperationAssignmentAncestorsSingleton
 from Evaluation.OperatorAssignment import OperatorAssignment
+from Operators.BinaryOperators.DivsionBinaryOperator import DivisionBinaryOperator
+from Operators.BinaryOperators.MultiplyBinaryOperator import MultiplyBinaryOperator
+from Operators.BinaryOperators.SubtractBinaryOperator import SubtractBinaryOperator
+from Operators.GroupByThenOperators.GroupByThenAvg import GroupByThenAvg
+from Operators.GroupByThenOperators.GroupByThenCount import GroupByThenCount
 from Utils import Parallel
 from Utils.Logger import Logger
-from Operators.AddBinaryOperator import AddBinaryOperator
-from Operators.EqualRangeDiscretizerUnaryOperator import EqualRangeDiscretizerUnaryOperator
+from Operators.BinaryOperators.AddBinaryOperator import AddBinaryOperator
+from Operators.UnaryOperators.EqualRangeDiscretizerUnaryOperator import EqualRangeDiscretizerUnaryOperator
 from Operators.Operator import Operator, operatorType
-from Operators.UnaryOperator import UnaryOperator
+from Operators.UnaryOperators.UnaryOperator import UnaryOperator
 from Properties import Properties
 
 import pandas as pd
@@ -23,6 +28,7 @@ import pandas as pd
 class OperatorsAssignmentsManager:
 
     # a new copy of the provided operator
+    @staticmethod
     def getOperator(operator: Operator)-> Operator:
         if operator.getType() == operatorType.Unary:
             return OperatorsAssignmentsManager.getUnaryOperator(operator.getName())
@@ -90,35 +96,35 @@ class OperatorsAssignmentsManager:
 
         # switch (operatorName) {
         # GroupByThenOperators
-        # if operatorName == "GroupByThenAvg":
-        #     GroupByThenAvg gbtAvg = new GroupByThenAvg();
-        #     return gbtAvg
+        if operatorName == "GroupByThenAvg":
+            gbtAvg = GroupByThenAvg()
+            return gbtAvg
         # elif operatorName == "GroupByThenMax":
-        #     GroupByThenMax gbtMmax = new GroupByThenMax();
+        #     gbtMmax = GroupByThenMax()
         #     return gbtMmax
         # elif operatorName == "GroupByThenMin":
-        #     GroupByThenMin gbtMin = new GroupByThenMin();
+        #     gbtMin = GroupByThenMin()
         #     return gbtMin
-        # elif operatorName == "GroupByThenCount":
-        #     GroupByThenCount gbtCount = new GroupByThenCount();
-        #     return gbtCount
+        elif operatorName == "GroupByThenCount":
+            gbtCount = GroupByThenCount()
+            return gbtCount
         # elif operatorName == "GroupByThenStdev":
-        #     GroupByThenStdev gbtStdev = new GroupByThenStdev();
+        #     gbtStdev = GroupByThenStdev()
         #     return gbtStdev
 
         # BinaryOperators
         if operatorName == "AddBinaryOperator":
             abo = AddBinaryOperator()
             return abo
-        # elif operatorName == "SubtractBinaryOperator":
-        #     SubtractBinaryOperator sbo = new SubtractBinaryOperator();
-        #     return sbo;
-        # elif operatorName == "MultiplyBinaryOperator":
-        #     MultiplyBinaryOperator mbo = new MultiplyBinaryOperator();
-        #     return mbo;
-        # elif operatorName == "DivisionBinaryOperator":
-        #     DivisionBinaryOperator dbo = new DivisionBinaryOperator();
-        #     return dbo;
+        elif operatorName == "SubtractBinaryOperator":
+            sbo = SubtractBinaryOperator()
+            return sbo;
+        elif operatorName == "MultiplyBinaryOperator":
+            mbo = MultiplyBinaryOperator()
+            return mbo
+        elif operatorName == "DivisionBinaryOperator":
+            dbo = DivisionBinaryOperator()
+            return dbo
 
         # Todo: ignore time features
         # TimeBasedGroupByThen

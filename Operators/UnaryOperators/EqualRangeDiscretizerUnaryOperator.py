@@ -6,7 +6,7 @@ import pandas as pd
 from Data.Dataset import Dataset
 from Utils.Logger import Logger
 from Operators.Operator import Operator, operatorType, outputType
-from Operators.UnaryOperator import UnaryOperator
+from Operators.UnaryOperators.UnaryOperator import UnaryOperator
 
 
 class EqualRangeDiscretizerUnaryOperator(UnaryOperator):

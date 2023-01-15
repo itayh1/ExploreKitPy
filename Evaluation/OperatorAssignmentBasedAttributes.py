@@ -10,7 +10,7 @@ from Evaluation.InformationGainFilterEvaluator import InformationGainFilterEvalu
 from Evaluation.StatisticOperations import StatisticOperations
 from Evaluation.OperatorAssignment import OperatorAssignment
 from Operators import Operator
-from Operators.UnaryOperator import UnaryOperator
+from Operators.UnaryOperators.UnaryOperator import UnaryOperator
 
 
 class OperatorAssignmentBasedAttributes:
@@ -229,8 +229,8 @@ class OperatorAssignmentBasedAttributes:
     # The attributes that were used to generate the feature are excluded.
     def processGeneratedAttribute(self, dataset: Dataset, oa: OperatorAssignment, generatedAttribute: pd.Series):
         # IMPORTANT: make sure that the source and target attributes are not included in these calculations
-        discreteColumns: List[pd.Series] = dataset.getAllColumnsOfType(Operator.outputType.Discrete, False)
-        numericColumns: List[pd.Series] = dataset.getAllColumnsOfType(Operator.outputType.Numeric, False)
+        discreteColumns: List[pd.Series] = dataset.getAllColumnsOfType(self._is_column_discrete, False)
+        numericColumns: List[pd.Series] = dataset.getAllColumnsOfType(self._is_column_numeric, False)
 
         # The paired T-Tests for the dataset's numeric attributes
         if Operator.Operator.getSeriesType(generatedAttribute) == Operator.outputType.Numeric:
@@ -247,7 +247,7 @@ class OperatorAssignmentBasedAttributes:
                 self.stdevPairedTTestValuesForGeneratedAttributeAndDatasetNumericAttributes = 0
 
         # The chi Squared test for the dataset's dicrete attribtues
-        chiSquareTestsScores = StatisticOperations.calculateChiSquareTestValues(self._filterOperatorAssignmentAttributes(discreteColumns,oa),generatedAttribute,dataset)
+        chiSquareTestsScores = StatisticOperations.calculateChiSquareTestValues(self._filterOperatorAssignmentAttributes(discreteColumns,oa),[generatedAttribute],dataset)
         if len(chiSquareTestsScores) > 0:
             self.maxChiSquaredTestValuesForGeneratedAttributeAndDatasetDiscreteAttributes = np.max(chiSquareTestsScores)
             self.minChiSquaredTestValuesForGeneratedAttributeAndDatasetDiscreteAttributes = np.min(chiSquareTestsScores)
@@ -261,7 +261,7 @@ class OperatorAssignmentBasedAttributes:
 
         # The Chi Square test for ALL the dataset's attirbutes (Numeric attributes will be discretized)
         discreteColumns.extend(numericColumns)
-        AllAttributesChiSquareTestsScores = StatisticOperations.calculateChiSquareTestValues(self._filterOperatorAssignmentAttributes(discreteColumns,oa),generatedAttribute,dataset)
+        AllAttributesChiSquareTestsScores = StatisticOperations.calculateChiSquareTestValues(self._filterOperatorAssignmentAttributes(discreteColumns,oa),[generatedAttribute],dataset)
         if len(AllAttributesChiSquareTestsScores) > 0:
             self.maxChiSquaredTestValuesForGeneratedAttributeAndAllDatasetAttributes = np.max(AllAttributesChiSquareTestsScores)
             self.minChiSquaredTestValuesForGeneratedAttributeAndAllDatasetAttributes = np.min(AllAttributesChiSquareTestsScores)

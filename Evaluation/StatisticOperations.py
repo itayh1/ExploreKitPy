@@ -5,7 +5,7 @@ import numpy as np
 from scipy.stats import ttest_rel, chi2_contingency
 
 from Data.Dataset import Dataset
-from Operators.EqualRangeDiscretizerUnaryOperator import EqualRangeDiscretizerUnaryOperator
+from Operators.UnaryOperators.EqualRangeDiscretizerUnaryOperator import EqualRangeDiscretizerUnaryOperator
 from Operators.Operator import Operator, outputType
 from Properties import Properties
 
@@ -38,6 +38,7 @@ class StatisticOperations:
 
     # Calculates the Chi-Square test values among all the possible combonation of elements in the two provided list.
     # Also supports numeric attributes, a discretized versions of which will be used in the calculation.
+    @staticmethod
     def calculateChiSquareTestValues(list1: List[pd.Series], list2: List[pd.Series], dataset: Dataset) -> List[float]:
         bins = [0] * Properties.equalRangeDiscretizerBinsNumber
         erduo = EqualRangeDiscretizerUnaryOperator(bins)
@@ -67,10 +68,6 @@ class StatisticOperations:
                     chiSquareValues.append(chiSquareTestVal)
         return chiSquareValues
 
-    def calculateChiSquareTestValues(list1: List[pd.Series], columnInfo: pd.Series, dataset: Dataset) -> List[float]:
-        tempList = []
-        tempList.append(columnInfo)
-        return StatisticOperations.calculateChiSquareTestValues(list1, tempList, dataset)
 
     # Receives a numeric column and returns its discretized version
     @staticmethod
@@ -92,10 +89,8 @@ class StatisticOperations:
     def generateDiscreteAttributesCategoryIntersection(col1: pd.Series, col2: pd.Series) -> np.ndarray:
         assert Operator.getSeriesType(col1) != outputType.Numeric
         assert Operator.getSeriesType(col2) != outputType.Numeric
-        col1Values = col1.to_numpy()
-        col2Values = col2.to_numpy()
 
-        if col1Values.shape[0] != col2Values.shape[0]:
+        if col1.shape[0] != col2.shape[0]:
             raise Exception("Columns do not have the same number of instances")
 
         return StatisticOperations._generateChiSuareIntersectionMatrix(col1, col2)

@@ -3,7 +3,8 @@ import pandas as pd
 
 from Evaluation.OperatorAssignment import OperatorAssignment
 from Evaluation.OperatorAssignmentBasedAttributes import OperatorAssignmentBasedAttributes
-from Operators.AddBinaryOperator import AddBinaryOperator
+from Operators.BinaryOperators.BinaryOperator import AddBinaryOperator
+from Operators.BinaryOperators.BinaryOperator import BinaryOperator
 
 from Utils.Loader import Loader
 
@@ -26,7 +27,7 @@ def test_without_generating_feature(dataset):
 
 
 def test_with_generating_feature(dataset):
-    binary_operator = AddBinaryOperator()
+    binary_operator = BinaryOperator()
 
     # if not binary_operator.isApplicable(dataset, source, target):
     #     print("Bad operator")

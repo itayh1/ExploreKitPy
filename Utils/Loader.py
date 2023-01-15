@@ -23,6 +23,7 @@ class Loader:
         try:
             data = arff.loadarff(filePath)
             df = pd.DataFrame(data[0])
+            df = self._setDataframeStringsToDiscrete(df)
 
             Logger.Info(f'num of attributes: {len(df.keys())}')
             Logger.Info(f'num of instances: {len(df.values)}')
@@ -32,24 +33,24 @@ class Loader:
                 targetClassName = df.keys()[-1]
             else:
                 targetClassName = classAttIndex
-            df[targetClassName] = df[targetClassName].str.decode("utf-8")
+            # df[targetClassName] = df[targetClassName].str.decode("utf-8")
 
             if distinctValIndices == None:
                 folds = self.GenerateFolds(df[targetClassName], randomSeed, trainingSetPercentageOfDataset)
             else:
-                pass    #TODO: missing func?
+                raise Exception("No support for distinct values")
 
             distinctValColumnInfos = []
-            if distinctValIndices != None:
-                for distinctColumnIndex in distinctValIndices:
-                    distinctValColumnInfos.append(df[distinctColumnIndex])
+            # if distinctValIndices != None:
+            #     for distinctColumnIndex in distinctValIndices:
+            #         distinctValColumnInfos.append(df[distinctColumnIndex])
 
             # Fially, we can create the Dataset object
             return Dataset(df, folds, targetClassName, data[1].name, randomSeed, Properties.maxNumberOfDiscreteValuesForInclusionInSet)
 
         except Exception as ex:
             Logger.Error(f'Exception in readArff. message: {ex}')
-            return None
+            raise
 
     def GenerateFolds(self, targetColumnInfo, randomSeed: int, trainingSetPercentage: float) -> list: #List<Fold>
 
@@ -128,3 +129,10 @@ class Loader:
                 return False
          else:
              raise Exception("unknown test fold selection method")
+
+    def _setDataframeStringsToDiscrete(self, df: pd.DataFrame) -> pd.DataFrame:
+        categoricalColumns = df.select_dtypes(include='object').columns
+        for colName in categoricalColumns:
+            categoryToIntMap = {cat: i for i, cat in enumerate(sorted(df[colName].unique()))}
+            df[colName].replace(categoryToIntMap, inplace=True)
+        return df

@@ -23,7 +23,7 @@ class Classifier:
         self.classLabel = 'class' if 'class' in trainingSet.columns else trainingSet.columns[-1]
         X = trainingSet.drop(labels=[self.classLabel], axis=1)
 
-        self._saveValuesOfCategoricalColumns(X)
+        X = self._saveValuesOfCategoricalColumns(X)
 
         X = pd.get_dummies(X)
 
@@ -56,8 +56,12 @@ class Classifier:
         return testSet['class'].values, preds
 
     # Save categorical columns for one-hot encoding in test
-    def _saveValuesOfCategoricalColumns(self, df: pd.DataFrame):
-        self.categoricalColumnsMap = {col: df[col].unique() for col in df.select_dtypes(include='object').columns}
+    def _saveValuesOfCategoricalColumns(self, df: pd.DataFrame) -> pd.DataFrame:
+        discreteColumns = df.select_dtypes(include='int').columns
+        self.categoricalColumnsMap = {col: df[col].unique() for col in discreteColumns}
+        convertIntToCategoryMap = {colName: 'category' for colName in discreteColumns}
+        df = df.astype(convertIntToCategoryMap)
+        return df
 
     # Set df's categorical columns to Categorical type to remember missing categories in test
     def _getDataframeWithCategoricalColumns(self, df: pd.DataFrame):
