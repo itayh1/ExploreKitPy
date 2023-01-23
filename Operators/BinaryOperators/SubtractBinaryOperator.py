@@ -13,7 +13,7 @@ class SubtractBinaryOperator(BinaryOperator):
 
     def generate(self, dataset: Dataset, sourceColumns: List[pd.Series], targetColumns):
         newColumn = sourceColumns[0].sub(targetColumns[0]).replace([np.inf, -np.inf], np.nan).fillna(0)
-        newColumn.name = 'Divide' + self.generateName(sourceColumns, targetColumns)
+        newColumn.name = 'Subtract' + self.generateName(sourceColumns, targetColumns)
         oaAncestors = OperationAssignmentAncestorsSingleton()
         oaAncestors.addAssignment(newColumn.name, sourceColumns, targetColumns)
         return newColumn

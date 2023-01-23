@@ -45,10 +45,10 @@ class Operator:
     def getOutputType(self) -> outputType:
         raise NotImplementedError("Abstract class Operator shouldn't instanced directly")
 
-    def processTrainingSet(self, dataset: Dataset, sourceColumns: pd.Series, targetColumns):
+    def processTrainingSet(self, dataset: Dataset, sourceColumns: List[pd.Series], targetColumns: List[pd.Series]):
         raise NotImplementedError("Abstract class Operator shouldn't instanced directly")
 
-    def generate(self, dataset: Dataset, sourceColumns: pd.Series, targetColumns: list) -> pd.Series:
+    def generate(self, dataset: Dataset, sourceColumns: List[pd.Series], targetColumns: List[pd.Series]) -> pd.Series:
         raise NotImplementedError("Abstract class Operator shouldn't instanced directly")
 
     def isApplicable(self, dataset: Dataset, sourceColumns: List[pd.Series], targetColumns: List[pd.Series]) -> bool:

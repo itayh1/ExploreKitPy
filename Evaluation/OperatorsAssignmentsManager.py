@@ -15,6 +15,9 @@ from Operators.BinaryOperators.MultiplyBinaryOperator import MultiplyBinaryOpera
 from Operators.BinaryOperators.SubtractBinaryOperator import SubtractBinaryOperator
 from Operators.GroupByThenOperators.GroupByThenAvg import GroupByThenAvg
 from Operators.GroupByThenOperators.GroupByThenCount import GroupByThenCount
+from Operators.GroupByThenOperators.GroupByThenMax import GroupByThenMax
+from Operators.GroupByThenOperators.GroupByThenMin import GroupByThenMin
+from Operators.GroupByThenOperators.GroupByThenStdev import GroupByThenStdev
 from Utils import Parallel
 from Utils.Logger import Logger
 from Operators.BinaryOperators.AddBinaryOperator import AddBinaryOperator
@@ -90,27 +93,27 @@ class OperatorsAssignmentsManager:
     @staticmethod
     def getNonUnaryOperator(operatorName: str):
         timeSpan = 0
-        if operatorName.startswith("TimeBasedGroupByThen"):
-            timeSpan = float(operatorName.split("_")[1])
-            operatorName = operatorName.split("_")[0]
+        # if operatorName.startswith("TimeBasedGroupByThen"):
+        #     timeSpan = float(operatorName.split("_")[1])
+        #     operatorName = operatorName.split("_")[0]
 
         # switch (operatorName) {
         # GroupByThenOperators
         if operatorName == "GroupByThenAvg":
             gbtAvg = GroupByThenAvg()
             return gbtAvg
-        # elif operatorName == "GroupByThenMax":
-        #     gbtMmax = GroupByThenMax()
-        #     return gbtMmax
-        # elif operatorName == "GroupByThenMin":
-        #     gbtMin = GroupByThenMin()
-        #     return gbtMin
+        elif operatorName == "GroupByThenMax":
+            gbtMmax = GroupByThenMax()
+            return gbtMmax
+        elif operatorName == "GroupByThenMin":
+            gbtMin = GroupByThenMin()
+            return gbtMin
         elif operatorName == "GroupByThenCount":
             gbtCount = GroupByThenCount()
             return gbtCount
-        # elif operatorName == "GroupByThenStdev":
-        #     gbtStdev = GroupByThenStdev()
-        #     return gbtStdev
+        elif operatorName == "GroupByThenStdev":
+            gbtStdev = GroupByThenStdev()
+            return gbtStdev
 
         # BinaryOperators
         if operatorName == "AddBinaryOperator":
@@ -118,31 +121,13 @@ class OperatorsAssignmentsManager:
             return abo
         elif operatorName == "SubtractBinaryOperator":
             sbo = SubtractBinaryOperator()
-            return sbo;
+            return sbo
         elif operatorName == "MultiplyBinaryOperator":
             mbo = MultiplyBinaryOperator()
             return mbo
         elif operatorName == "DivisionBinaryOperator":
             dbo = DivisionBinaryOperator()
             return dbo
-
-        # Todo: ignore time features
-        # TimeBasedGroupByThen
-        # elif operatorName == "TimeBasedGroupByThenCountAndAvg":
-        #     TimeBasedGroupByThenCountAndAvg tbgbycaa = new TimeBasedGroupByThenCountAndAvg(timeSpan);
-        #     return tbgbycaa;
-        # elif operatorName == "TimeBasedGroupByThenCountAndCount":
-        #     TimeBasedGroupByThenCountAndCount tbgbtccac = new TimeBasedGroupByThenCountAndCount(timeSpan);
-        #     return tbgbtccac;
-        # elif operatorName == "TimeBasedGroupByThenCountAndMax":
-        #     TimeBasedGroupByThenCountAndMax tbgbtcam = new TimeBasedGroupByThenCountAndMax(timeSpan);
-        #     return tbgbtcam;
-        # elif operatorName == "TimeBasedGroupByThenCountAndMin":
-        #     TimeBasedGroupByThenCountAndMin tbgbtcamm = new TimeBasedGroupByThenCountAndMin(timeSpan);
-        #     return tbgbtcamm;
-        # elif operatorName == "TimeBasedGroupByThenCountAndStdev":
-        #     TimeBasedGroupByThenCountAndStdev tbgbtcas = new TimeBasedGroupByThenCountAndStdev(timeSpan);
-        #     return tbgbtcas;
         else:
             raise Exception("unindentified unary operator: " + operatorName)
 
@@ -431,6 +416,7 @@ class OperatorsAssignmentsManager:
             for oa in operatorAssignments:
                 produceScoreOfOperationAssigment(oa)
 
+        from Search.PreRankerScoreRanker import PreRankerScoreRanker
         ranker = PreRankerScoreRanker()
         oaListRanked = ranker.rankAndFilter(operatorAssignments, None, None, None)
         if numOfOperatorAssignmentsToGet < len(oaListRanked):
