@@ -14,7 +14,7 @@ class StatisticOperations:
 
     # The function receives two lists of features and returns a list of each possible pairs Paired T-Test values
     @staticmethod
-    def calculatePairedTTestValues(list1: List[pd.Series], list2: List[pd.Series]):
+    def _calculatePairedTTestValues(list1: List[pd.Series], list2: List[pd.Series]):
         tTestValues = []
         for ci1 in list1:
             if not pd.api.types.is_float_dtype(ci1):
@@ -34,7 +34,7 @@ class StatisticOperations:
     def calculatePairedTTestValues(list1: List[pd.Series], columnInfo: pd.Series):
         tempList = []
         tempList.append(columnInfo)
-        return StatisticOperations.calculatePairedTTestValues(list1, tempList)
+        return StatisticOperations._calculatePairedTTestValues(list1, tempList)
 
     # Calculates the Chi-Square test values among all the possible combonation of elements in the two provided list.
     # Also supports numeric attributes, a discretized versions of which will be used in the calculation.

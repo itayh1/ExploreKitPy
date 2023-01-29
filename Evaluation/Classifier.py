@@ -10,7 +10,7 @@ class Classifier:
 
     def __init__(self, classifier: str):
         if classifier == 'RandomForest':
-            self.cls = RandomForestClassifier(random_state=Properties.randomSeed)
+            self.cls = RandomForestClassifier(n_estimators=2000, random_state=Properties.randomSeed)
             self.classLabel = ''
         else:
             msg = f'Unknown classifier: {classifier}'

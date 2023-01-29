@@ -1,3 +1,4 @@
+from typing import Dict
 
 import numpy as np
 import pandas as pd
@@ -90,7 +91,7 @@ class DatasetBasedAttributes:
         self.discreteAttributesList: list
         self.numericAttributesList: list
 
-    def getDatasetBasedFeatures(self, dataset: Dataset, classifier: str) -> dict:
+    def getDatasetBasedFeatures(self, dataset: Dataset, classifier: str) -> Dict[str, AttributeInfo]:
         try:
             self.processGeneralDatasetInfo(dataset)
 
@@ -386,7 +387,7 @@ class DatasetBasedAttributes:
 
     # Returns a HashMap with all the attributes. For each attribute, in addition to the value we also record the
     # type and name of each attribute.
-    def generateDatasetAttributesMap(self):
+    def generateDatasetAttributesMap(self) -> Dict[str, AttributeInfo]:
         attributes = {}
 
         att1 = AttributeInfo("numOfInstances", Operator.outputType.Numeric, self.numOfInstances, -1)

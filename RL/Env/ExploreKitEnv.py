@@ -20,7 +20,7 @@ class ExploreKitEnv(Environment):
 
     def __init__(self, dataset: Dataset, features: List[pd.Series], classifier_name: str):
         dba = DatasetBasedAttributes()
-        dataset_based_features = dba.getDatasetBasedFeatures(dataset, Properties.classifier)
+        dataset_based_features = [attr_info.value for attr_info in dba.getDatasetBasedFeatures(dataset, Properties.classifier).values()]
         parent_based_features = self._get_parentbase_features(dataset, features)
         inbetween_base_features = self._get_inbetween_base_features(features)
 
@@ -117,9 +117,9 @@ class ExploreKitEnv(Environment):
         empty_oa = OperatorAssignment([], [], Operator(), None)
         parentbase_features = []
         for i, feature in enumerate(features):
-            df = pd.DataFrame(features[:i] + features[i+1:])
-            fold = Fold([0, 1], False)
-            dataset = Dataset(df, [fold], '', '', Properties.randomSeed, Properties.maxNumberOfDiscreteValuesForInclusionInSet)
+            df = pd.DataFrame(features[:i] + features[i+1:] + [features[i]]).T
+            fold = Fold(feature.unique().tolist(), False)
+            dataset = Dataset(df, [fold], feature.name, '', Properties.randomSeed, Properties.maxNumberOfDiscreteValuesForInclusionInSet)
             attributes_infos = oaba.getGeneratedAttributeValuesMetaFeatures(dataset, empty_oa, feature)
             attributes_values = [attr.value for attr in attributes_infos.values()]
             parentbase_features.append(attributes_values)

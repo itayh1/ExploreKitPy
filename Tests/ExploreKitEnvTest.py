@@ -15,7 +15,7 @@ if __name__ == '__main__':
     dataset = loader.readArff(german_credit_dataset_path, randomSeed, None, None, 0.66)
 
     discrete_columns = dataset.getAllColumnsOfType(pd.api.types.is_integer_dtype, False)
-    numeric_columns = dataset.getAllColumnsOfType(pd.api.types.is_numeric_dtype, False)
+    numeric_columns = dataset.getAllColumnsOfType(pd.api.types.is_float_dtype, False)
 
     features = random.sample(discrete_columns, 2)
     features.extend(random.sample(numeric_columns, 2))
