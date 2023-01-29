@@ -2,9 +2,11 @@ from typing import List
 
 import numpy as np
 import pandas as pd
+from sklearn.metrics import roc_auc_score
 
 from Data.Dataset import Dataset
 from Data.Fold import Fold
+from Evaluation.Classifier import Classifier
 from Evaluation.DatasetBasedAttributes import DatasetBasedAttributes
 from Evaluation.OperatorAssignment import OperatorAssignment
 from Evaluation.OperatorAssignmentBasedAttributes import OperatorAssignmentBasedAttributes
@@ -16,7 +18,7 @@ from RL.Env.Environment import Environment, ActionResult
 Action = int
 class ExploreKitEnv(Environment):
 
-    def __int__(self, dataset: Dataset, features: List[pd.Series]):
+    def __init__(self, dataset: Dataset, features: List[pd.Series], classifier_name: str):
         dba = DatasetBasedAttributes()
         dataset_based_features = dba.getDatasetBasedFeatures(dataset, Properties.classifier)
         parent_based_features = self._get_parentbase_features(dataset, features)
@@ -31,6 +33,10 @@ class ExploreKitEnv(Environment):
         self.state = np.concatenate([dataset_based_features, parent_based_features, inbetween_base_features])
 
         self.selected_features = []
+
+        # classifier
+        self.classifier_name = classifier_name
+        self.baseline_score = self._get_score(self.dataset.df)
 
     def reset(self):
         self.selected_features = []
@@ -52,25 +58,48 @@ class ExploreKitEnv(Environment):
         if action < num_of_features:
             self.selected_features.append(self.features[action])
             return ActionResult(0.0, False, self.state)
+
         elif action < num_of_features + len(self.unary_operators):
             op = self.unary_operators[action - num_of_features]
+            return self._action_for_operation(op)
+
         elif action < num_of_features + len(self.unary_operators) + len(self.non_unary_operators):
             op = self.non_unary_operators[action - len(self.unary_operators) - num_of_features]
-        else:
-            raise Exception("action is out of range")
+            return self._action_for_operation(op)
 
+        raise Exception("action is out of range")
+
+    #region Action
     def _action_for_operation(self, op: Operator) -> ActionResult:
         if len(self.selected_features) == 0:
             return ActionResult(-10, True, self.state)
 
-        sourceColumns = self.selected_features[:-1]
-        targetColumns = [self.selected_features[-1]]
-        if not op.isApplicable(self.dataset, sourceColumns, targetColumns):
+        source_columns = self.selected_features[:-1]
+        target_columns = [self.selected_features[-1]]
+        if not op.isApplicable(self.dataset, source_columns, target_columns):
             return ActionResult(-1, True, self.state)
 
-        op.processTrainingSet(self.dataset, sourceColumns, targetColumns)
-        new_feature = op.generate(self.dataset, sourceColumns, targetColumns)
+        op.processTrainingSet(self.dataset, source_columns, target_columns)
+        new_feature = op.generate(self.dataset, source_columns, target_columns)
+        df = self.dataset.df.copy()
+        df['new_feature'] = new_feature
+        score = self._get_score(df)
 
+        if score > self.baseline_score:
+            return ActionResult(10, True, self.state)
+        else:
+            return ActionResult(-1, True, self.state)
+
+    def _get_score(self, df: pd.DataFrame):
+        classifier = Classifier(self.classifier_name)
+        classifier.buildClassifier(df.iloc[self.dataset.getIndicesOfTrainingInstances(),:])
+        test_set = df.iloc[self.dataset.getIndicesOfTestInstances(), :]
+        evaluation_info = classifier.evaluateClassifier(test_set)
+        score = roc_auc_score(test_set[self.dataset.targetClass],
+                              evaluation_info.getScoreDistribution()[:, 1])
+        return score
+
+    #endregion
 
     #region BuildState
     def _get_parentbase_features(self, dataset: Dataset, features: List[pd.Series]):
@@ -97,8 +126,3 @@ class ExploreKitEnv(Environment):
         return np.concatenate(parentbase_features)
 
     #endregion
-    def _action_select_feature(self, action: Action):
-        pass
-
-    def _action_select_operation(self, action: Action):
-        pass

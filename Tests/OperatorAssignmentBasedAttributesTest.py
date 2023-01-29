@@ -3,7 +3,7 @@ import pandas as pd
 
 from Evaluation.OperatorAssignment import OperatorAssignment
 from Evaluation.OperatorAssignmentBasedAttributes import OperatorAssignmentBasedAttributes
-from Operators.BinaryOperators.BinaryOperator import AddBinaryOperator
+from Operators.BinaryOperators.AddBinaryOperator import AddBinaryOperator
 from Operators.BinaryOperators.BinaryOperator import BinaryOperator
 
 from Utils.Loader import Loader

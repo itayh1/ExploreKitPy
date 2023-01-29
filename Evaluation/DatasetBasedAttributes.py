@@ -8,6 +8,7 @@ from Evaluation.AttributeInfo import AttributeInfo
 from Evaluation.AucWrapperEvaluator import AucWrapperEvaluator
 # from Column import Column
 from Data.Dataset import Dataset
+from Evaluation.StatisticOperations import StatisticOperations
 from Operators import Operator
 from Operators.UnaryOperators.EqualRangeDiscretizerUnaryOperator import EqualRangeDiscretizerUnaryOperator
 # from FilterWrapperHeuristicSearch import FilterWrapperHeuristicSearch
@@ -320,12 +321,14 @@ class DatasetBasedAttributes:
         for i in range(len(self.discreteAttributesList)-1):
             for j in range(i+1, len(self.discreteAttributesList)):
                 if i != j:
-                    counts = self.generateDiscreteAttributesCategoryIntersection(dataset.df[self.discreteAttributesList[i]],
-                                                                                 dataset.df[self.discreteAttributesList[j]])
+                    # counts = self.generateDiscreteAttributesCategoryIntersection(dataset.df[self.discreteAttributesList[i]],
+                    #                                                              dataset.df[self.discreteAttributesList[j]])
+                    counts = StatisticOperations.generateDiscreteAttributesCategoryIntersection(
+                                dataset.df[self.discreteAttributesList[i]], dataset.df[self.discreteAttributesList[j]])
                     # testVal = chiSquareTest.chiSquare(counts)
-                    testVal = scipy.stats.chi2_contingency(counts)
-                    if not np.isnan(testVal) and not np.isinf(testVal):
-                        chiSquaredTestValuesList.append(testVal)
+                    chiSquareTestVal, p, dof, expected = scipy.stats.chi2_contingency(counts)
+                    if not np.isnan(chiSquareTestVal) and not np.isinf(chiSquareTestVal):
+                        chiSquaredTestValuesList.append(chiSquareTestVal)
 
         if len(chiSquaredTestValuesList) > 0:
             self.maxChiSquareValueforDiscreteAttributes = max(chiSquaredTestValuesList)
@@ -354,15 +357,17 @@ class DatasetBasedAttributes:
             discretizedColumns.append(discretizedAttribute)
 
         # now we add all the original discrete attributes to this list and run the Chi-Square test again
-        discretizedColumns.extend(self.discreteAttributesList)
+        for discreteAttrribute in self.discreteAttributesList:
+            discretizedColumns.append(dataset.df[discreteAttrribute])
         chiSquaredTestValuesList = []
         for i in range(len(discretizedColumns)-1):
             for j in range(i + 1, len(discretizedColumns)):
                 if (i!=j):
-                    counts = self.generateDiscreteAttributesCategoryIntersection(discretizedColumns[i], discretizedColumns[j])
-                    testVal = scipy.stats.chi2_contingency(counts)[0]
-                    if not np.isnan(testVal) and not np.isinf(testVal):
-                        chiSquaredTestValuesList.append(testVal)
+                    # counts = self.generateDiscreteAttributesCategoryIntersection(discretizedColumns[i], discretizedColumns[j])
+                    counts = StatisticOperations.generateDiscreteAttributesCategoryIntersection(discretizedColumns[i], discretizedColumns[j])
+                    chiSquareTestVal, p, dof, expected = scipy.stats.chi2_contingency(counts)
+                    if not np.isnan(chiSquareTestVal) and not np.isinf(chiSquareTestVal):
+                        chiSquaredTestValuesList.append(chiSquareTestVal)
 
 
         if len(chiSquaredTestValuesList) > 0:

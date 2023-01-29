@@ -5,7 +5,7 @@ import numpy as np
 
 ActionResult = NamedTuple(
     "ActionResult",
-    fields=[("reward", float), ("done", bool), ("new_state", np.ndarray)],
+    [("reward", float), ("done", bool), ("new_state", np.ndarray)]
 )
 
 class Environment:
