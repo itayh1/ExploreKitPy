@@ -10,7 +10,9 @@ class Classifier:
 
     def __init__(self, classifier: str):
         if classifier == 'RandomForest':
-            self.cls = RandomForestClassifier(n_estimators=2000, random_state=Properties.randomSeed)
+            # self.cls = RandomForestClassifier(n_estimators=2000, random_state=Properties.randomSeed)
+            self.cls = RandomForestClassifier(min_samples_leaf=50, n_estimators=150, bootstrap=True, oob_score=True,
+                                   n_jobs=-1, random_state=42)
             self.classLabel = ''
         else:
             msg = f'Unknown classifier: {classifier}'
@@ -24,10 +26,15 @@ class Classifier:
         X = trainingSet.drop(labels=[self.classLabel], axis=1)
 
         X = self._saveValuesOfCategoricalColumns(X)
-
         X = pd.get_dummies(X)
 
         y = trainingSet[self.classLabel]
+
+        from sklearn.preprocessing import OneHotEncoder
+        discreteColumns = trainingSet.select_dtypes(include='int').columns
+        encoder = OneHotEncoder()
+        X2 = encoder.fit_transform(trainingSet[discreteColumns])
+
         self.cls.fit(X, y)
 
     def evaluateClassifier(self, testSet: pd.DataFrame) -> EvaluationInfo:
