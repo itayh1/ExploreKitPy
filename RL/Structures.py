@@ -1,4 +1,4 @@
-
+import random
 from collections import namedtuple, deque
 from typing import Iterator, Tuple
 
@@ -10,6 +10,24 @@ Experience = namedtuple(
     "Experience",
     field_names=["state", "action", "reward", "done", "new_state"],
 )
+
+
+class Memory():
+
+    def __init__(self, memsize):
+        self.memsize = memsize
+        self.memory = deque(maxlen=self.memsize)
+
+    def add_episode(self, epsiode):
+        self.memory.append(epsiode)
+
+    def get_batch(self, bsize):
+        sampled_epsiodes = random.sample(self.memory, bsize)
+        batch = []
+        for episode in sampled_epsiodes:
+            # point = np.random.randint(0, len(episode) + 1 - time_step)
+            batch.append(episode)
+        return batch
 
 class RLDataset(IterableDataset):
     """Iterable Dataset containing the ExperienceBuffer which will be updated with new experiences during training.

@@ -18,7 +18,7 @@ class Environment:
     def action(self, action) -> ActionResult:
         raise Exception('Not implemented')
 
-    def sample(self):
+    def sample(self) -> ActionResult:
         raise Exception('Not implemented')
 
     def reset(self):

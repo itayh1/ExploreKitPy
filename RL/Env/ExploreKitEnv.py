@@ -7,6 +7,7 @@ from sklearn.metrics import roc_auc_score
 from Data.Dataset import Dataset
 from Data.Fold import Fold
 from Evaluation.Classifier import Classifier
+from Evaluation.Classifier2 import Classifier2
 from Evaluation.DatasetBasedAttributes import DatasetBasedAttributes
 from Evaluation.OperatorAssignment import OperatorAssignment
 from Evaluation.OperatorAssignmentBasedAttributes import OperatorAssignmentBasedAttributes
@@ -61,16 +62,16 @@ class ExploreKitEnv(Environment):
 
         elif action < num_of_features + len(self.unary_operators):
             op = self.unary_operators[action - num_of_features]
-            return self._action_for_operation(op)
+            return self._action_of_operation(op)
 
         elif action < num_of_features + len(self.unary_operators) + len(self.non_unary_operators):
             op = self.non_unary_operators[action - len(self.unary_operators) - num_of_features]
-            return self._action_for_operation(op)
+            return self._action_of_operation(op)
 
         raise Exception("action is out of range")
 
     #region Action
-    def _action_for_operation(self, op: Operator) -> ActionResult:
+    def _action_of_operation(self, op: Operator) -> ActionResult:
         if len(self.selected_features) == 0:
             return ActionResult(-10, True, self.state)
 
@@ -91,13 +92,13 @@ class ExploreKitEnv(Environment):
             return ActionResult(-1, True, self.state)
 
     def _get_score(self, df: pd.DataFrame):
-        classifier = Classifier(self.classifier_name)
+        classifier = Classifier2(self.classifier_name)
         classifier.buildClassifier(df.iloc[self.dataset.getIndicesOfTrainingInstances(),:])
+
         test_set = df.iloc[self.dataset.getIndicesOfTestInstances(), :]
         evaluation_info = classifier.evaluateClassifier(test_set)
-        score = roc_auc_score(test_set[self.dataset.targetClass],
-                              evaluation_info.getScoreDistribution()[:, 1])
-        return score
+
+        return evaluation_info.get_roc_auc_score()
 
     #endregion
 

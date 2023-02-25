@@ -21,7 +21,7 @@ def split_data(data: pd.DataFrame, test_size):
     test_set = data.iloc[indicesOfTestFolds, :]
     return train_set, test_set
 
-def main4(data: pd.DataFrame):
+def test_classifier2(data: pd.DataFrame):
     classifier = Classifier2(Properties.classifier)
 
     train_set, test_set = split_data(data, test_size=0.333)
@@ -70,9 +70,6 @@ def main3(data: pd.DataFrame):
     print(f'Test ROC AUC  Score: {roc_auc_score(y_test, probs)}')
 def main2(df: pd.DataFrame):
     classifier = Classifier(Properties.classifier)
-
-    # df = pd.read_csv('train.csv')
-    # df = df.drop('id', axis=1)
     size = df.shape[0]
 
     indicesOfTrainingFolds = random.sample(list(range(size)), int(size * 0.666))
@@ -88,26 +85,29 @@ def main2(df: pd.DataFrame):
     probs = evaluation_info.getScoreDistribution()[:,1] # pipe.predict_proba(X_test)[:, 1]
     print(f'Test ROC AUC  Score: {roc_auc_score(test_set[df.columns[-1]].values, probs)}')
 
-def main(dataset: Dataset):
+def test_classifier(dataset: Dataset):
     df = dataset.df
 
     classifier = Classifier(Properties.classifier)
     classifier.buildClassifier(df.iloc[dataset.getIndicesOfTrainingInstances(), :])
     test_set = df.iloc[dataset.getIndicesOfTestInstances(), :]
-    evaluation_info = classifier.evaluateClassifier(test_set)
-    score = roc_auc_score(test_set[dataset.targetClass],
-                          evaluation_info.getScoreDistribution()[:, 1])
-    print(score)
+    eval_info = classifier.evaluateClassifier(test_set)
+
+    acc = eval_info.get_accuracy_score()
+    auc = eval_info.get_roc_auc_score()
+    print(f"The accuracy of the model is {round(acc, 3) * 100} %")
+    print(f'Test ROC AUC  Score: {auc}')
 
 
 if __name__ == '__main__':
     baseFolder = '/home/itay/Documents/java/ExploreKit/AutomaticFeatureGeneration-master/ML_Background/Datasets/'
     german_credit_dataset_path = baseFolder + "german_credit.arff"
-    data = Loader().readArff(german_credit_dataset_path, 42, None, None, 1.0).df
-
+    dataset = Loader().readArff(german_credit_dataset_path, 42, None, None, 1.0)
+    df = dataset.df
     # main2(data)
     # main3(data.copy())
-    main4(data.copy())
+    test_classifier2(df.copy())
+    test_classifier(dataset.replicateDataset())
 
 
 

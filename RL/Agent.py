@@ -12,7 +12,7 @@ class Agent:
 
     def __init__(self, env: Environment, rl_dataset: RLDataset):
         self.env = env
-        self.state = torch.tensor(self.env.reset()[0])
+        self.state = torch.tensor(self.env.get_observation_space())
         self.dataset = rl_dataset
 
     def reset(self):
@@ -30,7 +30,7 @@ class Agent:
             action
         """
         if np.random.random() < epsilon:
-            action = self.env.action_space.sample()
+            action = self.env.sample()
         else:
             # state = torch.tensor([self.state])
             state = self.state
@@ -47,11 +47,13 @@ class Agent:
     def play_step(self, net: nn.Module, epsilon: float = 0.0, device: str = 'cpu') -> Experience:
         action = self.get_action(net, epsilon, device)
 
-        new_state, reward, done, _, _ = self.env.step(action)
+        actionResult = self.env.action(action)
+
+        reward, done, new_state = actionResult
         new_state = torch.tensor(new_state, device=device)
 
         exp = Experience(self.state, action, reward, done, new_state)
-        self.dataset.set_new_experience(exp)
+        self.dataset.add_episode(exp)
 
         self.state = new_state
         if done:
