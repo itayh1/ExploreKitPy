@@ -5,7 +5,7 @@ import torch.cuda
 from matplotlib import pyplot as plt
 from torch import nn
 from torch.optim import Adam
-from torch.nn.utils.rnn import pad_sequence, pack_padded_sequence
+from torch.nn.utils.rnn import pad_sequence, pack_padded_sequence, PackedSequence
 
 from Net import Net
 from Agent import Agent
@@ -79,7 +79,7 @@ class DQN():
                 if np.random.rand(1) < epsilon:
                     torch_x = torch.from_numpy(prev_state).float().to(self.device)
                     torch_x = torch_x.view(1, 1, -1)
-                    torch_x = self._pad_seqequence(torch_x)
+                    torch_x, _ = self._pad_seqequence(torch_x)
                     model_out = self.net.forward(torch_x, bsize=1,  hidden_state=hidden_state,
                                                    cell_state=cell_state)
                     action = np.random.randint(0, self.env.get_action_space())
@@ -87,6 +87,8 @@ class DQN():
                     cell_state = model_out[1][1]
                 else:
                     torch_x = torch.from_numpy(prev_state).float().to(self.device)
+                    torch_x = torch_x.view(1, 1, -1)
+                    torch_x, _ = self._pad_seqequence(torch_x)
                     model_out = self.net.forward(torch_x, bsize=1, hidden_state=hidden_state,
                                                    cell_state=cell_state)
                     out = model_out[0]
@@ -114,27 +116,33 @@ class DQN():
                     cs, ac, rw, ns = [], [], [], []
                     for element in b:
                         cs.append(element[0])
-                        ac.append(element[1])
-                        rw.append(element[2])
+                        # ac.append(element[1])
+                        # rw.append(element[2])
                         ns.append(element[3])
                     current_states.append(torch.Tensor(cs))
-                    acts.append(torch.Tensor(ac))
-                    rewards.append(torch.Tensor(rw))
+                    # acts.append(torch.Tensor(ac))
+                    # rewards.append(torch.Tensor(rw))
+                    acts.append(b[-1][1])
+                    rewards.append(b[-1][2])
                     next_states.append(torch.Tensor(ns))
 
-                torch_current_states = self._pad_seqequence(current_states).float().to(self.device)
-                torch_acts = self._pad_seqequence(acts).long().to(self.device)
-                torch_rewards = self._pad_seqequence(rewards).float().to(self.device)
-                torch_next_states = self._pad_seqequence(next_states).float().to(self.device)
+                torch_acts = torch.LongTensor(acts).to(self.device)
+                torch_rewards = torch.FloatTensor(rewards).to(self.device)
+
+                torch_current_states, _ = self._pad_seqequence(current_states)
+                torch_current_states = torch_current_states.to(self.device)
+
+                torch_next_states, _ = self._pad_seqequence(next_states)
+                torch_next_states = torch_next_states.to(self.device)
 
                 Q_next, _ = self.net.forward(torch_next_states, bsize=self.batch_size,
                                                  hidden_state=hidden_batch, cell_state=cell_batch)
                 Q_next_max, __ = Q_next.detach().max(dim=1)
-                target_values = torch_rewards[:, - 1] + (self.gamma * Q_next_max)
+                target_values = torch_rewards + (self.gamma * Q_next_max)
 
                 Q_s, _ = self.net.forward(torch_current_states, bsize=self.batch_size,
                                             hidden_state=hidden_batch, cell_state=cell_batch)
-                Q_s_a = Q_s.gather(dim=1, index=torch_acts[:, - 1].unsqueeze(dim=1)).squeeze(dim=1)
+                Q_s_a = Q_s.gather(dim=1, index=torch_acts.unsqueeze(dim=1)).squeeze(dim=1)
 
                 loss = self.criterion(Q_s_a, target_values)
                 #  save performance measure
@@ -156,15 +164,15 @@ class DQN():
                 global_step += 1
                 steps += 1
 
-            # self.update_stats(episode_loss/steps, episode_reward, episode)
+            self.update_stats(loss.item(), episode_reward, episode)
             reward_stats.append(episode_reward)
             self.memory.add_episode(local_memory)
 
-    def _pad_seqequence(self, batch):
+    def _pad_seqequence(self, batch) -> PackedSequence:
         x_lens = [len(x) for x in batch]
         xx_pad = pad_sequence(batch, batch_first=True, padding_value=0)
         x_packed = pack_padded_sequence(xx_pad, x_lens, batch_first=True, enforce_sorted=False)
-        return x_packed
+        return x_packed, x_lens
 
     def dqn_mse_loss(self, exp: Experience) -> nn.MSELoss:
         state, action, reward, done, next_state = exp
