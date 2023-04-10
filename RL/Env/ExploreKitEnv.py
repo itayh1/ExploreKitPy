@@ -41,6 +41,7 @@ class ExploreKitEnv(Environment):
 
     def reset(self):
         self.selected_features = []
+        return self.state
 
     def sample(self) -> ActionResult:
         random_action = np.random.randint(self.actions_space)
@@ -73,23 +74,25 @@ class ExploreKitEnv(Environment):
     #region Action
     def _action_of_operation(self, op: Operator) -> ActionResult:
         if len(self.selected_features) == 0:
-            return ActionResult(-10, True, self.state)
+            # return ActionResult(-10, True, self.state)
+            return ActionResult(-1.0, True, self.state)
 
         source_columns = self.selected_features[:-1]
         target_columns = [self.selected_features[-1]]
         if not op.isApplicable(self.dataset, source_columns, target_columns):
-            return ActionResult(-1, True, self.state)
+            return ActionResult(-1.0, True, self.state)
 
-        op.processTrainingSet(self.dataset, source_columns, target_columns)
-        new_feature = op.generate(self.dataset, source_columns, target_columns)
-        df = self.dataset.df.copy()
-        df['new_feature'] = new_feature
-        score = self._get_score(df)
-
-        if score > self.baseline_score:
-            return ActionResult(10, True, self.state)
-        else:
-            return ActionResult(-1, True, self.state)
+        return ActionResult(1.0, True, self.state)
+        # op.processTrainingSet(self.dataset, source_columns, target_columns)
+        # new_feature = op.generate(self.dataset, source_columns, target_columns)
+        # df = self.dataset.df.copy()
+        # df.insert(0, 'new_feature', new_feature)    # last col is labels
+        # score = self._get_score(df)
+        #
+        # if score > self.baseline_score:
+        #     return ActionResult(10, True, self.state)
+        # else:
+        #     return ActionResult(-1, True, self.state)
 
     def _get_score(self, df: pd.DataFrame):
         classifier = Classifier2(self.classifier_name)

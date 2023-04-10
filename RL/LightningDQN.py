@@ -8,7 +8,7 @@ from torch.optim import Adam
 from torch.utils.data import DataLoader
 
 from Agent import Agent
-from Net import Net
+from DQNNets import DuelingDQNNet
 from Structures import RLDataset
 
 class LightningDQN(LightningModule):
@@ -21,8 +21,8 @@ class LightningDQN(LightningModule):
         self.epsilon_decay_rate = epsilon_decay_rate
         obs_size = self.env.observation_space.shape[0]
         n_actions = self.env.action_space.n
-        self.net = Net(obs_size, n_actions, 42)
-        self.target_net = Net(obs_size, n_actions,42)
+        self.net = DuelingDQNNet(obs_size, n_actions, 42)
+        self.target_net = DuelingDQNNet(obs_size, n_actions, 42)
 
         self.dataset = RLDataset()
         self.agent = Agent(self.env, self.dataset)

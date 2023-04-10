@@ -10,27 +10,67 @@ from torch.nn.utils.rnn import pad_sequence, pack_padded_sequence, pad_packed_se
 dims = [100, 10]
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 hidden_size = 128
-class Net(nn.Module):
+
+class DQNNet(nn.Module):
     def __init__(self, state_size, action_size, seed):
-        super(Net, self).__init__()
+        super().__init__()
+
+        self.input_size = state_size
+        self.out_size = action_size
+
+        self.seed = torch.manual_seed(seed)
+        self.seq = nn.Sequential(
+            nn.Linear(in_features=self.input_size, out_features=hidden_size),
+            nn.LeakyReLU(0.3),
+            nn.Linear(in_features=hidden_size, out_features=64),
+            nn.LeakyReLU(0.3),
+            nn.Linear(in_features=64, out_features=32),
+            nn.LeakyReLU(0.3),
+            nn.Linear(in_features=32, out_features=self.out_size),
+        )
+    def forward(self,  x: PackedSequence, bsize, hidden_state, cell_state):
+        out, input_sizes = pad_packed_sequence(x, batch_first=True)
+        out = out[torch.arange(out.shape[0]), input_sizes - 1]
+
+        out = self.seq(out)
+        return out, 42
+
+class DuelingDQNNet(nn.Module):
+    def __init__(self, state_size, action_size, seed):
+        super(DuelingDQNNet, self).__init__()
 
         self.input_size = state_size
         self.out_size = action_size
 
         self.seed = torch.manual_seed(seed)
         self.lstm_layer = nn.LSTM(input_size=self.input_size, hidden_size=hidden_size, num_layers=1, batch_first=True)
-        self.adv = nn.Linear(in_features=hidden_size, out_features=self.out_size)
-        self.val = nn.Linear(in_features=hidden_size, out_features=1)
+        self.adv = nn.Sequential(
+            nn.Linear(in_features=self.input_size, out_features=hidden_size),
+            nn.LeakyReLU(0.3),
+            nn.Linear(in_features=hidden_size, out_features=64),
+            nn.LeakyReLU(0.3),
+            nn.Linear(in_features=64, out_features=32),
+            nn.LeakyReLU(0.3),
+            nn.Linear(in_features=32, out_features=self.out_size),
+        )
+        self.val = nn.Sequential(
+            nn.LeakyReLU(0.3),
+            nn.Linear(in_features=hidden_size, out_features=64),
+            nn.LeakyReLU(0.3),
+            nn.Linear(in_features=64, out_features=32),
+            nn.LeakyReLU(0.3),
+            nn.Linear(in_features=32, out_features=1)
+        )
         self.relu = nn.ReLU()
 
     def forward(self, x: PackedSequence, bsize, hidden_state, cell_state):
-        # x = x.view(bsize, 1, self.input_size)
-
         # x = x.view(bsize, time_step, 512)
         # x, lengths = self.pad_seqequence(x)
 
-        out, (h_n, c_n) = self.lstm_layer(x, (hidden_state, cell_state))
-        out, input_sizes = pad_packed_sequence(out, batch_first=True)
+        # out, (h_n, c_n) = self.lstm_layer(x, (hidden_state, cell_state))
+        # out, input_sizes = pad_packed_sequence(out, batch_first=True)
+        # out = out[torch.arange(out.shape[0]), input_sizes-1]
+        out, input_sizes = pad_packed_sequence(x, batch_first=True)
         out = out[torch.arange(out.shape[0]), input_sizes-1]
 
         adv_out = self.adv(out)
@@ -39,7 +79,7 @@ class Net(nn.Module):
         qout = val_out.expand(bsize, self.out_size) + (
                     adv_out - adv_out.mean(dim=1).unsqueeze(dim=1).expand(bsize, self.out_size))
 
-        return qout, (h_n, c_n)
+        return qout, 42  #(h_n, c_n)
 
     def init_hidden_states(self, bsize):
         h = torch.zeros(1, bsize, hidden_size).float().to(device)

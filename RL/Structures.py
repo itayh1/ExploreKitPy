@@ -1,6 +1,6 @@
 import random
 from collections import namedtuple, deque
-from typing import Iterator, Tuple
+from typing import Iterator, Tuple, List
 
 import numpy as np
 from torch.utils.data import IterableDataset
@@ -11,21 +11,19 @@ Experience = namedtuple(
     field_names=["state", "action", "reward", "done", "new_state"],
 )
 
-
-class Memory():
+class Memory:
 
     def __init__(self, memsize):
         self.memsize = memsize
         self.memory = deque(maxlen=self.memsize)
 
-    def add_episode(self, epsiode):
+    def add_episode(self, epsiode: List[Experience]):
         self.memory.append(epsiode)
 
-    def get_batch(self, bsize):
+    def get_batch(self, bsize) -> List[List[Experience]]:
         sampled_epsiodes = random.sample(self.memory, bsize)
         batch = []
         for episode in sampled_epsiodes:
-            # point = np.random.randint(0, len(episode) + 1 - time_step)
             batch.append(episode)
         return batch
 
